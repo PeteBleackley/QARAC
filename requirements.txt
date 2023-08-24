@@ -1,3 +1,6 @@
 keras
 keras_nlp
 tensorflow
+numpy
+nltk
+tokenizers

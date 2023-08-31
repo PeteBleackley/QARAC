@@ -11,7 +11,8 @@ import tensorflow
 
 class LeafNode(keras.layers.Layer):
     def __init__(self):
-        self.bias = self.add_weight(shape=(1,),
+        super(LeafNode,self).__init__()
+        self.bias = self.add_weight(
                                     initializer='random_normal',
                                     trainable=True)
         
@@ -55,7 +56,7 @@ class HierarchicalLogits(keras.layers.Layer):
     def call(self,X,training=None):
         
         y=tensorflow.tensordot(X,self.normal,1)
-        result = self.concat([self.left(X)+y,self.right(X)]-y)
+        result = self.concat([self.left(X)+y,self.right(X)-y])
         return result
         
     

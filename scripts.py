@@ -30,7 +30,8 @@ def train_base_model(task,filename):
     model.compile(optimizer=optimizer,loss='sparse_categorical_crossentropy',metrics='accuracy')
     model.fit(train_data,
               epochs=100,
-              workers = 16)
+              workers = 16,
+              use_multiprocessing=True)
     test_data=qarac.corpora.Batcher.Batcher(test)
     print(model.evaluate(test_data))
     model.save(filename)

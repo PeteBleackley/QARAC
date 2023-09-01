@@ -11,6 +11,7 @@ import keras_nlp
 import tensorflow
 import warnings
 
+@tensorflow.function
 def convolve(x,y):
     
     fx = tensorflow.vectorized_map(fft, x, warn=False)
@@ -54,6 +55,7 @@ class HyenaLayer(keras.layers.Layer):
         self.data_projection = None
         self.filters = None
     
+    @tensorflow.function
     def positional_encoding(self,X):
         t = tensorflow.dtypes.saturate_cast(tensorflow.ragged.range(X.row_lengths()),
                                             tensorflow.float32)
@@ -90,7 +92,7 @@ class HyenaLayer(keras.layers.Layer):
             x = concat(x,tensorflow.zeros_like(x))
             f = concat(f,tensorflow.zeros_like(f))
         y = x[:,:,:,0]
-        for i in range(self.stages):
+        for i in tensorflow.range(self.stages):
             y = convolve(y,f[:,:,:,i])*x[:,:,:,i+1]
         if self.causal:
             for (i,n) in enumerate(X.row_lengths()):

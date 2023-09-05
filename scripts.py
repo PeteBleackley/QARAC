@@ -7,7 +7,9 @@ import qarac.corpora.BNCorpus
 import qarac.corpora.Batcher
 import qarac.models.qarac_base_model
 import keras
+import tensorflow
 
+#tensorflow.debugging.disable_traceback_filtering()
 
 
         

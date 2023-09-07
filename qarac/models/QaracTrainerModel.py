@@ -12,14 +12,56 @@ import QaracDecoderModel
 
 class QuaracTrainerModel(keras.Model):
     
-    def __init__(self,base_encoder_model,base_decoder_model):
-        
+    def __init__(self,base_encoder_model,base_decoder_model,tokenizer):
+        """
+        Sets up the Trainer model
+
+        Parameters
+        ----------
+        base_encoder_model : transformers.TFRobertaModel
+            Base model for encoders.
+        base_decoder_model : transformers.TFRobertaModel
+            Base model for decoder
+        tokenizer : transformers.RobertaTokenizer
+            Tokeniaer for decoder
+        Returns
+        -------
+        None.
+
+        """
         self.question_encoder = QaracEncoderModel.QaracEncoderModel(base_encoder_model)
         self.answer_encoder = QaracEncoderModel.QaracEncoderModel(base_encoder_model)
-        self.decoder = QaracDecoderModel.QaracDecoderModel(base_decoder_model)
+        self.decoder = QaracDecoderModel.QaracDecoderModel(base_decoder_model,tokenizer)
         self.consistency = keras.layers.Dot(axes=1,normalize=True)
         
     def call(self,inputs,training=None):
+        """
+        Generates training objective outputs from training data
+
+        Parameters
+        ----------
+        inputs : dict[str,tensoflow.tensor]
+            Fields are
+            'all_text': Tokenized text to train answer encoder to produce vectors 
+                        and decoder to convert them back to text
+            'offset_text': Same text as in 'all_text', but preceded by <s>
+            'question': Tokenized text of questions for question answering 
+                        objective
+            'answer': Tokenized text of answers for question answering objective
+            'proposition0': tokenized proposition for reasoning objective
+            'proposition1': tokenized proposition for reasoning objective
+            'conclusion_offset': tokenized text of conclusions for reasoning 
+                                 objective, prefixed by '<s>'
+            'statement0': tokenized statement for consistency objective
+        training : Bool, optional
+            Not used. The default is None.
+
+        Returns
+        -------
+        results : TYPE
+            DESCRIPTION.
+
+        """
         results = {}
         results['encode_decode'] = self.decoder((self.answer_encoder(inputs['all_text']),
                                                 inputs['offset_text']))

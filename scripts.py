@@ -9,7 +9,10 @@ import qarac.models.qarac_base_model
 import keras
 import tensorflow
 
-#tensorflow.debugging.disable_traceback_filtering()
+def decoder_loss(y_true,y_pred):
+    return keras.losses.sparse_categorical_crossentropy(y_true,
+                                                        y_pred.logits,
+                                                        logits=True)
 
 
         

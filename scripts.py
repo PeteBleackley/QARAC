@@ -8,12 +8,33 @@ import qarac.corpora.Batcher
 import qarac.models.qarac_base_model
 import keras
 import tensorflow
+import spacy
+import spacy_experimental
+import pandas
 
 def decoder_loss(y_true,y_pred):
     return keras.losses.sparse_categorical_crossentropy(y_true,
                                                         y_pred.logits,
                                                         logits=True)
 
+def capitalise(token,i):
+    return token.text_with_ws.title() if i==0 or token.tag_.startswith('NNP') else token.text_with_ws.lower()
+
+def clean_question(doc):
+    words = [capitalise(token,i) for (i,token) in enumerate(doc)]
+    if words[-1]!='?':
+        words.append('?')
+    return ''.join(words)
+
+def prepare_wiki_qa(filename,outfilename):
+    data = pandas.read_csv(filename,sep='\t')
+    nlp = spacy.load('en_core_web_trf')
+    nlp.add_pipe('experimental_coref')
+    data['Resolved_answer'] = pandas.Series([sent.text 
+                                              for doc in nlp.pipe(data.groupby('DocumentID')['Sentence'].apply(lambda x: ' '.join(x)))
+                                              for sent in doc.sentences])
+    data['Cleaned_questions']=pandas.Series([clean_question(doc) for doc in nlp.pipe(data)])
+    data[['Cleaned_questions','Resolved_answers','Label']].to_csv(outfilename)
 
         
 def train_base_model(task,filename):

@@ -8,6 +8,8 @@ We are planning to use the following datasets to train the models.
 
 ## Question Answering
 
+[WikiQA (Wikipedia Open-Domain Question Answering](https://paperswithcode.com/dataset/wikiqa)
+
 ## Reasoning
 
 [Avicenna: Syllogistic Commonsense Reasoning](https://github.com/ZeinabAghahadi/Syllogistic-Commonsense-Reasoning)

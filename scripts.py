@@ -1,5 +1,6 @@
 
 import os
+import re
 import argparse
 import pickle
 import tokenizers
@@ -9,8 +10,10 @@ import qarac.models.qarac_base_model
 import keras
 import tensorflow
 import spacy
-import spacy_experimental
 import pandas
+import qarac.utils.CoreferenceResolver
+
+
 
 def decoder_loss(y_true,y_pred):
     return keras.losses.sparse_categorical_crossentropy(y_true,
@@ -28,13 +31,17 @@ def clean_question(doc):
 
 def prepare_wiki_qa(filename,outfilename):
     data = pandas.read_csv(filename,sep='\t')
+    data['QNum']=data['QuestionID'].apply(lambda x: int(x[1:]))
     nlp = spacy.load('en_core_web_trf')
-    nlp.add_pipe('experimental_coref')
-    data['Resolved_answer'] = pandas.Series([sent.text 
-                                              for doc in nlp.pipe(data.groupby('DocumentID')['Sentence'].apply(lambda x: ' '.join(x)))
-                                              for sent in doc.sentences])
-    data['Cleaned_questions']=pandas.Series([clean_question(doc) for doc in nlp.pipe(data)])
-    data[['Cleaned_questions','Resolved_answers','Label']].to_csv(outfilename)
+    predictor = qarac.utils.CoreferenceResolver.CoreferenceResolver()
+    data['Resolved_answer'] = data.groupby('QNum')['Sentence'].transform(predictor)
+    unique_questions = data.groupby('QNum')['Question'].first()
+    cleaned_questions = pandas.Series([clean_question(doc)
+                                       for doc in nlp.pipe(unique_questions)],
+                                      index = unique_questions.index)
+    for (i,question) in cleaned_questions.items():
+        data.loc[data['QNum']==i,'Cleaned_question']=question
+    data[['Cleaned_question','Resolved_answer','Label']].to_csv(outfilename)
 
         
 def train_base_model(task,filename):
@@ -71,7 +78,10 @@ if __name__ == '__main__':
     parser.add_argument('task')
     parser.add_argument('-f','--filename')
     parser.add_argument('-t','--training-task')
+    parser.add_argument('-o','--outputfile')
     args = parser.parse_args()
     if args.task == 'train_base_model':
         train_base_model(args.training_task,args.filename)
+    elif args.task == 'prepare_wiki_qa':
+        prepare_wiki_qa(args.filename,args.outputfile)
    

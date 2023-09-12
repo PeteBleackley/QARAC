@@ -8,3 +8,5 @@ transformers
 spacy
 spacy-experimental
 pandas
+allennlp
+allennlp-models

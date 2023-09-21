@@ -32,42 +32,35 @@ class CombinedCorpus(keras.utils.Sequence):
 
         """
         super(CombinedCorpus,self).__init__()
-        self.tokenizer = tokenizer
-        start_doc = tokenizer.encode('<s>')
-        end_doc = tokenizer.encode('</s>')
         self.all_text = CorpusLoader.CorpusLoader(kwargs['all_text'], 
-                                                  start_doc, 
-                                                  end_doc, 
+                                                  tokenizer, 
                                                   ['all_text'], 
                                                   {'all_text':('offset_text',
                                                                'encode_decode')})
         n_samples = len(self.all_text)
         self.n_batches = numpy.ceil(n_samples/32.0).astype(int)
         self.question_answering = CorpusRepeater.CorpusRepeater(CorpusLoader.CorpusLoader(kwargs['question_answering'], 
-                                                                                          start_doc, 
-                                                                                          end_doc, 
+                                                                                          tokenizer, 
                                                                                           ['question',
                                                                                            'answer'], 
                                                                                           {}), 
                                                                 n_samples)
         self.reasoning = CorpusRepeater.CorpusRepeater(CorpusLoader.CorpusLoader(kwargs['reasoning'], 
-                                                                                 start_doc, 
-                                                                                 end_doc, 
+                                                                                 tokenizer,
                                                                                  ['proposition0',
                                                                                   'proposition1'], 
                                                                                  {'conclusion':('conclusion_offset',
                                                                                                 'reasoning')}), 
                                                        n_samples)
         self.consistency = CorpusRepeater.CorpusRepeater(CorpusLoader.CorpusLoader(kwargs['consitency'], 
-                                                                                   start_doc, 
-                                                                                   end_doc, 
+                                                                                   tokenizer, 
                                                                                    ['statement0',
                                                                                     'statement1'], 
                                                                                    {},
                                                                                    'consistency'), 
                                                          n_samples)
         self.batches = []
-        self.pad_token = self.tokenizer.token_to_id('<pad>')
+        self.pad_token = tokenizer.token_to_id('<pad>')
         self.on_epoch_end()
         
     def __len__(self):

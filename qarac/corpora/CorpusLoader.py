@@ -6,14 +6,13 @@ Created on Wed Sep 20 07:48:54 2023
 @author: peter
 """
 
-import datasets
+import numpy
 import tokenizers
 
 class CorpusLoader(object):
     
     def __init__(self,path,
-                 start_doc,
-                 end_doc,
+                 tokenizer
                  text_inputs,
                  text_outputs,
                  label=None):
@@ -44,14 +43,22 @@ class CorpusLoader(object):
         None.
 
         """
-        data = datasets.Dataset.from_file(path)
-        self.n_rows = len(data)
-        self.dataset = data.to_iterable_dataset()
-        self.start_doc = start_doc
-        self.end_doc = end_doc
+        data = pandas.read_csv(path)
+        self.n_rows = data.shape[0]
         self.text_inputs = text_inputs
         self.text_outputs = text_outputs
         self.label = label
+        self.rng = numpy.random.default_rng()
+        columns = list(set(self.text_inputs)|set(self.text_outputs.keys()))
+        tokenized = {column:tokenizer.encode_batch(data[column],
+                                                   add_special_tokens=False)}
+        if self.label is not None:
+            tokenized[self.label] = data[self.label]
+        self.dataset = [{column:tokenized[column][i]
+                         for column in columns}
+                        for i in range(self.n_rows)]
+        self.start_doc = tokenizer.encode('<s>')
+        self.end_doc = tokenizer.encode('</s>')
         
     def __len__(self):
         """
@@ -77,7 +84,8 @@ class CorpusLoader(object):
             outputs for model
 
         """
-        for row in self.dataset.shuffle():
+        self.rng.shuffle(self.dataset)
+        for row in self.dataset:
             X={}
             Y={}
             for column in self.text_inputs:

@@ -71,7 +71,7 @@ def train_base_model(task,filename):
     
 def prepare_training_datasets():
     wikiqa = pandas.read_csv('corpora/WikiQA.csv')
-    avicenna = pandas.read_csv('corpora/Avicenna_Train.csv')
+    avicenna = pandas.read_csv('corpora/Avicenna_Train.csv',encoding='iso-8859-1')
     snli = pandas.read_csv('corpora/snli_1.0_train.csv')
     question_answering = wikiqa.loc[wikiqa['Label']==1,
                                     ['Cleaned_question',
@@ -80,22 +80,24 @@ def prepare_training_datasets():
     reasoning = avicenna.loc[avicenna['Syllogistic relation']=='yes',
                              ['Premise 1',
                               'Premise 2',
-                              'Conclustion']].rename(columns={'Premise 1':'proposition0',
+                              'Conclusion']].rename(columns={'Premise 1':'proposition0',
                                                               'Premise 2':'proposition1',
                                                               'Conclusion':'conclusion'})
-    consistency = snli[['sentence1',
-                        'sentence2']].rename(columns={'sentence1':'statement0',
-                                                      'sentence2':'statement1'})
+    consistency = snli.loc[snli['gold_label']!='-',
+                           ['sentence1',
+                            'sentence2']].rename(columns={'sentence1':'statement0',
+                                                          'sentence2':'statement1'})
     mapping = {'entailment':1.0,
                'neutral':0.0,
                'contradiction':-1.0}
-    consistency['consistency'] = snli['gold_label'].apply(lambda x:mapping[x])
-    all_text = pandas.concatenate([wikiqa['Resolved_answer'],
-                                   avicenna['Premise 1'],
-                                   avicenna['Premise 1'],
-                                   reasoning['conclusion'],
-                                   snli['sentence1'],
-                                   snli['sentence2']]).to_frame(name='all_text')
+    consistency['consistency'] = snli.loc[snli['gold_label']!='-',
+                                          'gold_label'].apply(lambda x:mapping[x])
+    all_text = pandas.concat([wikiqa['Resolved_answer'],
+                              avicenna['Premise 1'],
+                              avicenna['Premise 1'],
+                              reasoning['conclusion'],
+                              snli['sentence1'],
+                              snli['sentence2']]).to_frame(name='all_text')
     all_text.to_csv('corpora/all_text.csv')
     question_answering.to_csv('corpora/question_answering.csv')
     reasoning.to_csv('corpora/reasoning_train.csv')

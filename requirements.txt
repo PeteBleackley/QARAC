@@ -5,6 +5,7 @@ numpy
 nltk
 tokenizers
 transformers
+datasets
 spacy
 spacy-experimental
 pandas

@@ -10,15 +10,51 @@ from allennlp.predictors.predictor import Predictor
 import pandas
 
 def clean(sentence):
+    """
+    Ensure sentence ends with full stop
+
+    Parameters
+    ----------
+    sentence : str
+        Sentence to be cleaned
+
+    Returns
+    -------
+    str
+        Sentence with full stop at the end.
+
+    """
     return sentence if sentence.strip().endswith('.') else sentence+'.'
 
 class CoreferenceResolver(object):
     
     def __init__(self):
+        """
+        Creates the Coreference resolver
+
+        Returns
+        -------
+        None.
+
+        """
         model_url = "https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2020.02.27.tar.gz"
         self.predictor = Predictor.from_path(model_url)
         
     def __call__(self,group):
+        """
+        
+
+        Parameters
+        ----------
+        group : pandas.Series
+            Sentences on which to perform coreference resolution
+
+        Returns
+        -------
+        pandas.Series
+            Sentences with coreferences resolved
+
+        """
         tokenized = group.apply(clean).str.split()
         line_breaks = tokenized.apply(len).cumsum()
         doc = []

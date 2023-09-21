@@ -53,13 +53,24 @@ class QuaracTrainerModel(keras.Model):
             'conclusion_offset': tokenized text of conclusions for reasoning 
                                  objective, prefixed by '<s>'
             'statement0': tokenized statement for consistency objective
+            'statement1: tokenized statement for consistency objective'
         training : Bool, optional
             Not used. The default is None.
 
         Returns
         -------
-        results : TYPE
-            DESCRIPTION.
+        results : dict[str,tensorflow.tensor]
+            Fields are
+            'encode_decode': tokeniaed text from decoding of vectors produced by
+                             answer encoder from 'all_text'
+            'question_answering': difference between vector produced by question
+                                  encoder for 'question' and answer encoder for 
+                                  'answer'
+            'reasoning': tokenised text produced by decoder from sum of vectors 
+                         produced by answwr endocer for 'proposition0' and 
+                         'proposition1'
+            'consistency': cosine similarity of vectors produced by answer encoder 
+                           from 'statement0' and 'statement1'
 
         """
         results = {}

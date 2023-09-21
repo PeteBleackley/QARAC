@@ -97,7 +97,7 @@ def prepare_training_datasets():
                               avicenna['Premise 1'],
                               reasoning['conclusion'],
                               snli['sentence1'],
-                              snli['sentence2']]).to_frame(name='all_text')
+                              snli['sentence2']]).to_frame(name='all_text').reset_index()
     all_text.to_csv('corpora/all_text.csv')
     question_answering.to_csv('corpora/question_answering.csv')
     reasoning.to_csv('corpora/reasoning_train.csv')

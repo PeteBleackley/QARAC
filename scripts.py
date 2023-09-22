@@ -4,9 +4,12 @@ import re
 import argparse
 import pickle
 import tokenizers
+import transformers
 import qarac.corpora.BNCorpus
 import qarac.corpora.Batcher
 import qarac.models.qarac_base_model
+import qarac.models.QaracTrainerModel
+import qarac.corpora.CombinedCorpus
 import keras
 import tensorflow
 import spacy
@@ -102,7 +105,48 @@ def prepare_training_datasets():
     question_answering.to_csv('corpora/question_answering.csv')
     reasoning.to_csv('corpora/reasoning_train.csv')
     consistency.to_csv('corpora/consistency.csv')
-
+    
+def train_models(path):
+    encoder_base = transformers.TFRobertaModel.from_pretrained('roberta_base')
+    config = encoder_base.config
+    config.is_decoder = True
+    decoder_base = transformers.TFRobertaModel.from_pretrained('roberta_base',
+                                                               config=config)
+    tokenizer = tokenizers.from_pretrained('roberta_base')
+    trainer = qarac.models.QaracTrainerModel.QuaracTrainerModel(encoder_base, 
+                                                                decoder_base, 
+                                                                tokenizer)
+    losses={'encode_decode':decoder_loss,
+            'question_answering':keras.losses.mean_squared_error,
+            'reasoning':decoder_loss,
+            'consistency':keras.losses.mean_squared_error}
+    optimizer = keras.optimizers.Nadam(learning_rate=keras.optimizers.schedules.ExponentialDecay(1.0e-5, 100, 0.99))
+    trainer.compile(optimizer=optimizer,
+                    loss=losses)
+    training_data = qarac.corpora.CombinedCorpus(tokenizer,
+                                                 all_text='corpora/all_text.csv',
+                                                 question_answering='corpora/question_answering.csv',
+                                                 reasoning='corpora/reasoning_train.csv',
+                                                 consistency='corpora/consistency.csv')
+    trainer.fit(training_data,
+                epochs=10,
+                workers=16,
+                use_multiprocessing=True)
+    trainer.question_encoder.push_to_hub('{}/qarac-roberta-question-encoder'.format(path))
+    trainer.answer_encoder.push_to_hub('{}/qarac-roberta-answer-encoder'.format(path))
+    trainer.decoder.push_to_hub('{}/qarac-roberta-decoder'.format(path))
+    with open('model_summaries.txt') as summaries:
+        summaries.write('TRAINER MODEL\n')
+        summaries.write(trainer.summary())
+        summaries.write('QUESTION ENCODER\n')
+        summaries.write(trainer.question_encoder.summary())
+        summaries.write('ANSWER ENCODER\n')
+        summaries.write(trainer.answer_encoder.summary())
+        summaries.write('DECODER\n')
+        summaries.write(trainer.decoder.summary())
+    keras.utils.plot_model(trainer,'trainer_model.png')
+    keras.utils.plot_model(trainer.answer_encoder,'encoder_model.png')
+    keras.utils.plot_model(trainer.decoder,'decoder_model.png')
                                                               
     
     
@@ -115,10 +159,12 @@ if __name__ == '__main__':
     parser.add_argument('-t','--training-task')
     parser.add_argument('-o','--outputfile')
     args = parser.parse_args()
-    if args.task == 'train_base_model':
+    if args.task == 'train_base_model': 
         train_base_model(args.training_task,args.filename)
     elif args.task == 'prepare_wiki_qa':
         prepare_wiki_qa(args.filename,args.outputfile)
     elif args.task == 'prepare_training_datasets':
         prepare_training_datasets()
+    elif args.task == 'train_models':
+        train_models(args.filename)
    

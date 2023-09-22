@@ -98,7 +98,7 @@ class QaracDecoderModel(transformers.TFPretrainedModel,transformers.TFGeneration
         Parameters
         ----------
         inputs : tuple of Tensorflow.Tensors OR tensorflow.Tensor
-            Vector to be converted to text and seed text ORtokenized seed text
+            Vector to be converted to text and seed text OR tokenized seed text
         kwargs : optional keyword arguments
             vector : tensorflow.Tensor vector to be decoded. May be supplied 
                      via a keyword argument when this is invoked by .generate

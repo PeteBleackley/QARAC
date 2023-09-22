@@ -28,9 +28,9 @@ class QaracDecoderHead(keras.layers.Layer):
         """
         super(QaracDecoderHead,self).__init__()
         self.concat = keras.layers.Concatenate(axis=1)
-        self.layer_0 = transformers.TFRobertaLayer(config)
-        self.layer_1 = transformers.TFRobertalayer(config)
-        self.head = transformers.TFRobertaLMHead(config)
+        self.layer_0 = transformers.models.roberta.TFRobertaLayer(config)
+        self.layer_1 = transformers.models.roberta.TFRobertalayer(config)
+        self.head = transformers.models.roberta.TFRobertaLMHead(config)
         
     def build(self,input_shape):
         """

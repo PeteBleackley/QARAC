@@ -52,7 +52,8 @@ class CorpusLoader(object):
         self.rng = numpy.random.default_rng()
         columns = list(set(self.text_inputs)|set(self.text_outputs.keys()))
         tokenized = {column:tokenizer.encode_batch(data[column],
-                                                   add_special_tokens=False)}
+                                                   add_special_tokens=False)
+                     for column in columns}
         if self.label is not None:
             tokenized[self.label] = data[self.label]
         self.dataset = [{column:tokenized[column][i]

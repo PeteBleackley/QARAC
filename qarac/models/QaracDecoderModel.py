@@ -30,7 +30,7 @@ class QaracDecoderHead(keras.layers.Layer):
         self.concat = keras.layers.Concatenate(axis=1)
         self.layer_0 = transformers.models.roberta.modeling_tf_roberta.TFRobertaLayer(config)
         self.layer_1 = transformers.models.roberta.modeling_tf_roberta.TFRobertaLayer(config)
-        self.head = transformers.models.roberta.TFRobertaLMHead(config)
+        self.head = transformers.models.roberta.modeling_td_roberta.TFRobertaLMHead(config)
         
     def build(self,input_shape):
         """

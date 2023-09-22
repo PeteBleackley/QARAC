@@ -51,7 +51,7 @@ class CorpusLoader(object):
         self.label = label
         self.rng = numpy.random.default_rng()
         columns = list(set(self.text_inputs)|set(self.text_outputs.keys()))
-        tokenized = {column:tokenizer.encode_batch(data[column],
+        tokenized = {column:tokenizer.encode_batch(data[column].apply(lambda x:tokenizers.TextInputSequence(x)),
                                                    add_special_tokens=False)
                      for column in columns}
         if self.label is not None:

@@ -12,7 +12,7 @@ import transformers
 
 class QaracDecoderHead(keras.layers.Layer):
     
-    def __init__(self,config):
+    def __init__(self,config,input_embeddings):
         """
         Creates the Decoder head
 
@@ -30,7 +30,8 @@ class QaracDecoderHead(keras.layers.Layer):
         self.concat = keras.layers.Concatenate(axis=1)
         self.layer_0 = transformers.models.roberta.modeling_tf_roberta.TFRobertaLayer(config)
         self.layer_1 = transformers.models.roberta.modeling_tf_roberta.TFRobertaLayer(config)
-        self.head = transformers.models.roberta.modeling_tf_roberta.TFRobertaLMHead(config)
+        self.head = transformers.models.roberta.modeling_tf_roberta.TFRobertaLMHead(config,
+                                                                                    input_embeddings)
         
     def build(self,input_shape):
         """
@@ -85,7 +86,8 @@ class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_t
         """
         super(QaracDecoderModel,self).__init__(base_model.config)
         self.base_model = base_model
-        self.decoder_head = QaracDecoderHead(self.base_model.config)
+        self.decoder_head = QaracDecoderHead(self.base_model.config,
+                                             self.base_model.roberta.get_input_embeddings())
         self.tokenizer = tokenizer
         self.start=None
         self.end=None

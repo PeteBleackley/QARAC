@@ -185,7 +185,9 @@ class CombinedCorpus(keras.utils.Sequence):
 
         """
         maxlen = max((len(sample) for sample in batch))
-        return tensorflow.constant([sample.pad(maxlen,pad_id=self.pad_token).ids
+        for sample in batch:
+            sample.pad(maxlen,pad_id=self.pad_token)
+        return tensorflow.constant([sample.ids
                                     for sample in batch])
     
     

@@ -113,7 +113,7 @@ def train_models(path):
     config.is_decoder = True
     decoder_base = transformers.TFRobertaModel.from_pretrained('roberta-base',
                                                                config=config)
-    tokenizer = tokenizers.from_pretrained('roberta-base')
+    tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
     trainer = qarac.models.QaracTrainerModel.QuaracTrainerModel(encoder_base, 
                                                                 decoder_base, 
                                                                 tokenizer)

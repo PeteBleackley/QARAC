@@ -5,6 +5,7 @@ import argparse
 import pickle
 import tokenizers
 import transformers
+import huggingface_hub
 import qarac.corpora.BNCorpus
 import qarac.corpora.Batcher
 import qarac.models.qarac_base_model
@@ -132,6 +133,7 @@ def train_models(path):
                 epochs=10,
                 workers=16,
                 use_multiprocessing=True)
+    huggingface_hub.login(token=os.environ['HUGGINGFACE_TOKEN'])
     trainer.question_encoder.push_to_hub('{}/qarac-roberta-question-encoder'.format(path))
     trainer.answer_encoder.push_to_hub('{}/qarac-roberta-answer-encoder'.format(path))
     trainer.decoder.push_to_hub('{}/qarac-roberta-decoder'.format(path))

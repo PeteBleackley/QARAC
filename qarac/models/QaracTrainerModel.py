@@ -31,7 +31,7 @@ class QuaracTrainerModel(keras.Model):
         """
         self.question_encoder = qarac.models.QaracEncoderModel.QaracEncoderModel(base_encoder_model)
         self.answer_encoder = qarac.models.QaracEncoderModel.QaracEncoderModel(base_encoder_model)
-        self.decoder = quarac.models.QaracDecoderModel.QaracDecoderModel(base_decoder_model,tokenizer)
+        self.decoder = qarac.models.QaracDecoderModel.QaracDecoderModel(base_decoder_model,tokenizer)
         self.consistency = keras.layers.Dot(axes=1,normalize=True)
         
     def call(self,inputs,training=None):

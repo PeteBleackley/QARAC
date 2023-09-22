@@ -25,7 +25,7 @@ class QaracEncoderModel(transformers.TFPreTrainedModel):
         None.
 
         """
-        super(QaracEncoderModel,self).__init__()
+        super(QaracEncoderModel,self).__init__(base_model.config)
         self.base_model = base_model
         self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead()
         

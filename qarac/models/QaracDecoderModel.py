@@ -83,7 +83,7 @@ class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_t
         None.
 
         """
-        super(QaracDecoderModel,self).__init__()
+        super(QaracDecoderModel,self).__init__(base_model.config)
         self.base_model = base_model
         self.decoder_head = QaracDecoderHead(self.base_model.config)
         self.tokenizer = tokenizer

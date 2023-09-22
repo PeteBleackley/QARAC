@@ -107,12 +107,12 @@ def prepare_training_datasets():
     consistency.to_csv('corpora/consistency.csv')
     
 def train_models(path):
-    encoder_base = transformers.TFRobertaModel.from_pretrained('roberta_base')
+    encoder_base = transformers.TFRobertaModel.from_pretrained('roberta-base')
     config = encoder_base.config
     config.is_decoder = True
-    decoder_base = transformers.TFRobertaModel.from_pretrained('roberta_base',
+    decoder_base = transformers.TFRobertaModel.from_pretrained('roberta-base',
                                                                config=config)
-    tokenizer = tokenizers.from_pretrained('roberta_base')
+    tokenizer = tokenizers.from_pretrained('roberta-base')
     trainer = qarac.models.QaracTrainerModel.QuaracTrainerModel(encoder_base, 
                                                                 decoder_base, 
                                                                 tokenizer)

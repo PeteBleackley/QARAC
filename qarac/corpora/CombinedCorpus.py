@@ -10,8 +10,7 @@ import collections
 import numpy
 import tensorflow
 import keras
-import CorpusLoader
-import CorpusRepeater
+from qarac.corpora import CorpusLoader, CorpusRepeater
 
 class CombinedCorpus(keras.utils.Sequence):
     

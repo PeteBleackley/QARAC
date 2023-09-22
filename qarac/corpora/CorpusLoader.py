@@ -56,7 +56,7 @@ class CorpusLoader(object):
                      for column in columns}
         if self.label is not None:
             tokenized[self.label] = data[self.label]
-            self.columns.add(self.label)
+            columns.add(self.label)
         self.dataset = [{column:tokenized[column][i]
                          for column in columns}
                         for i in range(self.n_rows)]

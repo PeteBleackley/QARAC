@@ -63,9 +63,9 @@ class GlobalAttentionPoolingHead(keras.layers.Layer):
             The pooled value.
 
         """
-        gp = tensorflow.linalg.l2_normalize(tensorflow.tensordot([tensorflow.reduce_sum(X,
+        gp = tensorflow.linalg.l2_normalize(tensorflow.tensordot(tensorflow.reduce_sum(X,
                                                                                        axis=1),
-                                                                  self.global_projection],
+                                                                  self.global_projection,
                                                                  axes=1),
                                             axis=1)
         lp = tensorflow.linalg.l2_normalize(tensorflow.tensordot(X,

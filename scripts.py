@@ -124,11 +124,11 @@ def train_models(path):
     optimizer = keras.optimizers.Nadam(learning_rate=keras.optimizers.schedules.ExponentialDecay(1.0e-5, 100, 0.99))
     trainer.compile(optimizer=optimizer,
                     loss=losses)
-    training_data = qarac.corpora.CombinedCorpus(tokenizer,
-                                                 all_text='corpora/all_text.csv',
-                                                 question_answering='corpora/question_answering.csv',
-                                                 reasoning='corpora/reasoning_train.csv',
-                                                 consistency='corpora/consistency.csv')
+    training_data = qarac.corpora.CombinedCorpus.CombinedCorpus(tokenizer,
+                                                                all_text='corpora/all_text.csv',
+                                                                question_answering='corpora/question_answering.csv',
+                                                                reasoning='corpora/reasoning_train.csv',
+                                                                consistency='corpora/consistency.csv')
     trainer.fit(training_data,
                 epochs=10,
                 workers=16,

@@ -92,7 +92,7 @@ class CorpusLoader(object):
             Y={}
             for column in self.text_inputs:
                 X[column] = row[column]
-            for (column,(x_name),y_name) in self.text_outputs.items():
+            for (column,(x_name,y_name)) in self.text_outputs.items():
                 X[x_name] = tokenizers.Encoding.merge([self.start_doc,row[column]])
                 Y[y_name] = tokenizers.Encoding.merge([row[column],self.end_doc])
             if self.label is not None:

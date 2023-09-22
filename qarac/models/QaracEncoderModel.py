@@ -9,7 +9,7 @@ Created on Tue Sep  5 10:01:39 2023
 import transformers
 import qarac.models.layers.GlobalAttentionPoolingHead
 
-class QaracEncoderModel(transformers.TFPretrainedModel):
+class QaracEncoderModel(transformers.TFPreTrainedModel):
     
     def __init__(self,base_model):
         """

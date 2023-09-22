@@ -67,7 +67,7 @@ class QaracDecoderHead(keras.layers.Layer):
         l0 = self.layer_0(vectors)
         return self.head(self.layer1(l0.last_hidden_state[:,1:]))
 
-class QaracDecoderModel(transformers.TFPretrainedModel,transformers.TFGenerationMixin):
+class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.TFGenerationMixin):
     
     def __init__(self,base_model,tokenizer):
         """

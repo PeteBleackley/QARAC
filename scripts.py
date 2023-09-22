@@ -114,9 +114,9 @@ def train_models(path):
     decoder_base = transformers.TFRobertaModel.from_pretrained('roberta-base',
                                                                config=config)
     tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
-    trainer = qarac.models.QaracTrainerModel.QuaracTrainerModel(encoder_base, 
-                                                                decoder_base, 
-                                                                tokenizer)
+    trainer = qarac.models.QaracTrainerModel.QaracTrainerModel(encoder_base, 
+                                                               decoder_base, 
+                                                               tokenizer)
     losses={'encode_decode':decoder_loss,
             'question_answering':keras.losses.mean_squared_error,
             'reasoning':decoder_loss,

@@ -10,7 +10,7 @@ import keras
 import qarac.models.QaracEncoderModel
 import qarac.models.QaracDecoderModel
 
-class QuaracTrainerModel(keras.Model):
+class QaracTrainerModel(keras.Model):
     
     def __init__(self,base_encoder_model,base_decoder_model,tokenizer):
         """
@@ -29,6 +29,7 @@ class QuaracTrainerModel(keras.Model):
         None.
 
         """
+        super(QaracTrainerModel,self).__init__()
         self.question_encoder = qarac.models.QaracEncoderModel.QaracEncoderModel(base_encoder_model)
         self.answer_encoder = qarac.models.QaracEncoderModel.QaracEncoderModel(base_encoder_model)
         self.decoder = qarac.models.QaracDecoderModel.QaracDecoderModel(base_decoder_model,tokenizer)

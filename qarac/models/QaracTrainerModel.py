@@ -8,7 +8,7 @@ Created on Tue Sep  5 15:30:06 2023
 
 import keras
 import qarac.models.QaracEncoderModel
-import quarac.models.QaracDecoderModel
+import qarac.models.QaracDecoderModel
 
 class QuaracTrainerModel(keras.Model):
     

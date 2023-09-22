@@ -51,7 +51,7 @@ class CombinedCorpus(keras.utils.Sequence):
                                                                                  {'conclusion':('conclusion_offset',
                                                                                                 'reasoning')}), 
                                                        n_samples)
-        self.consistency = CorpusRepeater.CorpusRepeater(CorpusLoader.CorpusLoader(kwargs['consitency'], 
+        self.consistency = CorpusRepeater.CorpusRepeater(CorpusLoader.CorpusLoader(kwargs['consistency'], 
                                                                                    tokenizer, 
                                                                                    ['statement0',
                                                                                     'statement1'], 

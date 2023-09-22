@@ -7,6 +7,7 @@ Created on Wed Sep 20 07:48:54 2023
 """
 
 import numpy
+import pandas
 import tokenizers
 
 class CorpusLoader(object):

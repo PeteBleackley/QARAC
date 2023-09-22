@@ -12,7 +12,7 @@ import tokenizers
 class CorpusLoader(object):
     
     def __init__(self,path,
-                 tokenizer
+                 tokenizer,
                  text_inputs,
                  text_outputs,
                  label=None):

@@ -37,6 +37,7 @@ class CombinedCorpus(keras.utils.Sequence):
                                                   {'all_text':('offset_text',
                                                                'encode_decode')})
         n_samples = len(self.all_text)
+
         self.n_batches = numpy.ceil(n_samples/32.0).astype(int)
         self.question_answering = CorpusRepeater.CorpusRepeater(CorpusLoader.CorpusLoader(kwargs['question_answering'], 
                                                                                           tokenizer, 
@@ -89,6 +90,7 @@ class CombinedCorpus(keras.utils.Sequence):
             Batch of data
 
         """
+
         return self.batches[n]
     
     def samples(self):
@@ -132,12 +134,12 @@ class CombinedCorpus(keras.utils.Sequence):
                 X[key].append(value)
             for (key,value) in y.items():
                 Y[key].append(value)
-            n+=1
-            if n==32:
-                self.batches.append(self.batch(X,Y))
-                n=0
-                X.clear()
-                Y.clear()
+        n+=1
+        if n==32:
+            self.batches.append(self.batch(X,Y))
+            n=0
+            X.clear()
+            Y.clear()
         if n!=0:
             self.batches.append(self.batch(X,Y,n))
             

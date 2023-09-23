@@ -60,6 +60,7 @@ class QaracEncoderModel(transformers.TFPreTrainedModel):
             Vector representing the document
 
         """
+
         return self.head(self.base_model(inputs).last_hidden_state)
   
     

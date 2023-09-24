@@ -10,11 +10,10 @@ import keras
 import tensorflow
 
 
-def dot_prod(x):
-    @tensorflow.function
-    def inner(y):
-        return tensorflow.tensordot(x,y,axes=1)
-    return inner
+@tensorflow.function
+def dot_prod(x,y):
+    return tensorflow.tensordot(x,y,axes=1)
+    
 
 class GlobalAttentionPoolingHead(keras.layers.Layer):
     
@@ -82,6 +81,6 @@ class GlobalAttentionPoolingHead(keras.layers.Layer):
         lp = tensorflow.linalg.l2_normalize(tensorflow.vectorized_map(self.project_local,
                                                                       X),
                                             axis=2)
-        attention = tensorflow.vectorized_map(dot_prod(gp),lp)
+        attention = tensorflow.vectorized_map(dot_prod,[lp,gp])
         return tensorflow.reduce_sum(attention *X,
                                      axis=1)

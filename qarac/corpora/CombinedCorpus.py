@@ -120,7 +120,7 @@ class CombinedCorpus(keras.utils.Sequence):
     def make_batches(self):
         batch = []
         n=0
-        for sample in self.samples:
+        for sample in self.samples():
             batch.append(sample)
             n+=1
             if n==32:

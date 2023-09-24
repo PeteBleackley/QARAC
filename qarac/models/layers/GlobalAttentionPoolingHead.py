@@ -9,7 +9,7 @@ Created on Tue Sep  5 07:32:55 2023
 import keras
 import tensorflow
 
-@tensorflow.function
+
 def dot_prod(x):
     @tensorflow.function
     def inner(y):

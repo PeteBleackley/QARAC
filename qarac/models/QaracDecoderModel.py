@@ -112,7 +112,9 @@ class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_t
 
         """
         (v,s) = (kwargs['vector'],inputs) if 'vector' in kwargs else inputs
-        return self.decoder_head((v,self.base_model(s).last_hidden_state))
+        
+        return self.decoder_head((tensorflow.expand_dims(v,1),
+                                  self.base_model(s).last_hidden_state))
     
     
         

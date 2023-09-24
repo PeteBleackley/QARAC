@@ -153,7 +153,7 @@ class CombinedCorpus(keras.utils.Sequence):
         n=0
         X = collections.defaultdict(list)
         Y = collections.defaultdict(list)
-        for (x,y) in samples():
+        for (x,y) in samples:
             for (key,value) in x.items():
                 X[key].append(value)
             for (key,value) in y.items():

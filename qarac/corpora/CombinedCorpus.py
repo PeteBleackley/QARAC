@@ -6,6 +6,7 @@ Created on Wed Sep 20 14:12:34 2023
 @author: peter
 """
 
+import itertools
 import collections
 import numpy
 import tensorflow
@@ -59,7 +60,7 @@ class CombinedCorpus(keras.utils.Sequence):
                                                                                    {},
                                                                                    'consistency'), 
                                                          n_samples)
-        self.batches = []
+        self.batches = None
         self.pad_token = tokenizer.token_to_id('<pad>')
         self.on_epoch_end()
         
@@ -91,7 +92,7 @@ class CombinedCorpus(keras.utils.Sequence):
 
         """
 
-        return self.batches[n]
+        return self.batch(next(self.batches))
     
     def samples(self):
         """
@@ -125,36 +126,16 @@ class CombinedCorpus(keras.utils.Sequence):
         None.
 
         """
-        self.batches = []
-        n=0
-        X = collections.defaultdict(list)
-        Y = collections.defaultdict(list)
-        for (x,y) in self.samples():
-            for (key,value) in x.items():
-                X[key].append(value)
-            for (key,value) in y.items():
-                Y[key].append(value)
-        n+=1
-        if n==32:
-            self.batches.append(self.batch(X,Y))
-            n=0
-            X.clear()
-            Y.clear()
-        if n!=0:
-            self.batches.append(self.batch(X,Y,n))
+        self.batches = itertools.batched(self.samples,32)
+        
             
-    def batch(self,X,Y,n=32):
+    def batch(self,samples):
         """
         Creates a batch of data from samples
 
         Parameters
         ----------
-        X : dict[str,list]
-            Input samples
-        Y : dict[str.list]
-            output samples
-        n : int, optional
-            Size of batch. The default is 32.
+        samples: iterable of tuples of (X,Y) dictionaries of data
 
         Returns
         -------
@@ -164,6 +145,16 @@ class CombinedCorpus(keras.utils.Sequence):
             Batched output samples
 
         """
+        n=0
+        X = collections.defaultdict(list)
+        Y = collections.defaultdict(list)
+        for (x,y) in samples():
+            for (key,value) in x.items():
+                X[key].append(value)
+            for (key,value) in y.items():
+                Y[key].append(value)
+            n+=1
+        
         for (key,value) in X.items():
             X[key] = self.pad(value)
         for (key,value) in Y.items():

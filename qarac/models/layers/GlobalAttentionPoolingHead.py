@@ -79,6 +79,6 @@ class GlobalAttentionPoolingHead(keras.layers.Layer):
         lp = tensorflow.linalg.l2_normalize(tensorflow.vectorized_map(self.project_local,
                                                                       X),
                                             axis=2)
-        attention = tensorflow.vectorized_map(dot_prod,(lp,gp)
+        attention = tensorflow.vectorized_map(dot_prod,(lp,gp))
         return tensorflow.reduce_sum(attention *X,
                                      axis=1)

@@ -60,9 +60,9 @@ class CombinedCorpus(keras.utils.Sequence):
                                                                                    {},
                                                                                    'consistency'), 
                                                          n_samples)
-        #self.batches = None
+        self.batches = None
         self.pad_token = tokenizer.token_to_id('<pad>')
-        #self.on_epoch_end()
+        self.on_epoch_end()
         
     def __len__(self):
         """
@@ -117,7 +117,7 @@ class CombinedCorpus(keras.utils.Sequence):
                 Y.update(y)
             yield (X,Y)
             
-    def batches(self):
+    def make_batches(self):
         batch = []
         n=0
         for sample in self.samples:
@@ -129,6 +129,9 @@ class CombinedCorpus(keras.utils.Sequence):
                 n=0
         if n!=0:
             yield batch
+            
+    def on_epoch_end(self):
+        self.batches = self.make_batches()
         
             
     def batch(self,samples):

@@ -163,11 +163,11 @@ class CombinedCorpus(keras.utils.Sequence):
         for (key,value) in X.items():
             X[key] = self.pad(value)
         for (key,value) in Y.items():
-            Y[key] = tensorflow.constant(value) if key=='consistency' else self.pad(value)
+            Y[key] = tensorflow.constant(value) if key=='consistency' else self.pad(value,False)
         Y['question_answering'] = tensorflow.zeros((n,768))
         return (X,Y)
     
-    def pad(self,batch):
+    def pad(self,batch,inputs=True):
         """
         Pads a batch of samples to uniform length
 
@@ -187,9 +187,12 @@ class CombinedCorpus(keras.utils.Sequence):
             sample.pad(maxlen,pad_id=self.pad_token)
         input_ids = tensorflow.constant([sample.ids
                                          for sample in batch])
-        attention_mask = tensorflow.constant(input_ids.numpy().apply(lambda x: 0.0 if x==self.pad_token
-                                                                     else 1.0))
-        return {'input_ids':input_ids,
-                'attention_mask':attention_mask}
+        result = input_ids
+        if inputs:
+            attention_mask = tensorflow.constant(input_ids.numpy().apply(lambda x: 0.0 if x==self.pad_token
+                                                                         else 1.0))
+            result = {'input_ids':input_ids,
+                      'attention_mask':attention_mask}
+        return result
     
     

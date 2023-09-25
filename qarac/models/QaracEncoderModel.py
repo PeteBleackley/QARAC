@@ -45,7 +45,9 @@ class QaracEncoderModel(transformers.TFPreTrainedModel):
         """
         self.built=True
         
-    def call(self,inputs):
+    def call(self,input_ids,
+             attention_mask=None,
+             training=False):
         """
         Vectorizes a tokenised text
 
@@ -61,7 +63,11 @@ class QaracEncoderModel(transformers.TFPreTrainedModel):
 
         """
 
-        return self.head(self.base_model(inputs).last_hidden_state)
+        return self.head(self.base_model(input_ids,
+                                         attention_mask,
+                                         training=training).last_hidden_state,
+                         attention_mask,
+                         training)
   
     
     

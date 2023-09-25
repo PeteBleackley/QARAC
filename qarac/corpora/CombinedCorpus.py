@@ -185,7 +185,11 @@ class CombinedCorpus(keras.utils.Sequence):
         maxlen = max((len(sample) for sample in batch))
         for sample in batch:
             sample.pad(maxlen,pad_id=self.pad_token)
-        return tensorflow.constant([sample.ids
-                                    for sample in batch])
+        input_ids = tensorflow.constant([sample.ids
+                                         for sample in batch])
+        attention_mask = tensorflow.constant(input_ids.numpy().apply(lambda x: 0.0 if x==self.pad_token
+                                                                     else 1.0))
+        return {'input_ids':input_ids,
+                'attention_mask':attention_mask}
     
     

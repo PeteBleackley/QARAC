@@ -57,7 +57,7 @@ class GlobalAttentionPoolingHead(keras.layers.Layer):
                                     self.local_projection,
                                     axes=1)
         
-    def call(self,X,training=None):
+    def call(self,X,attention_mask=None,training=None):
         """
         
 
@@ -65,6 +65,8 @@ class GlobalAttentionPoolingHead(keras.layers.Layer):
         ----------
         X : tensorflow.Tensor
             Base model vectors to apply pooling to.
+        attention_mask: tensorflow.Tensor, optional
+            mask for pad values
         training : bool, optional
             Not used. The default is None.
 
@@ -83,5 +85,7 @@ class GlobalAttentionPoolingHead(keras.layers.Layer):
                                                                       X),
                                             axis=2)
         attention = tensorflow.vectorized_map(dot_prod,(lp,gp))
+        if attention_mask is None:
+            attention_mask = tensorflow.ones_like(attention)
         return tensorflow.vectorized_map(dot_prod,
-                                         (attention,X))
+                                         (attention * attention_mask,X))

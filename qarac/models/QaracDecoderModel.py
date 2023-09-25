@@ -49,7 +49,13 @@ class QaracDecoderHead(keras.layers.Layer):
         """
         self.built = True
         
-    def call(self,inputs):
+        
+        
+        
+    def call(self,
+             vector,
+             hidden_states,
+             attention_mask=None,training=False):
         """
         Predicts text fron vector and hidden states of base model
 
@@ -64,9 +70,20 @@ class QaracDecoderHead(keras.layers.Layer):
             Predicted text
 
         """
-        vectors = self.concat(inputs)
-        l0 = self.layer_0(vectors)
-        return self.head(self.layer1(l0.last_hidden_state[:,1:]))
+        vectors = self.concat(vector, hidden_states)
+        attentions = attention_mask if attention_mask is None else self.concat(tensorflow.ones((hidden_states.shape(0),
+                                                                                                1)),
+                                                                               attention_mask)
+        l0 = self.layer_0(vectors,
+                          attentions,
+                          None,
+                          False,
+                          training)
+        return self.head(self.layer1(l0.last_hidden_state[:,1:],
+                                     attention_mask,
+                                     None,
+                                     False,
+                                     training))
 
 class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_tf_utils.TFGenerationMixin):
     
@@ -114,7 +131,8 @@ class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_t
         (v,s) = (kwargs['vector'],inputs) if 'vector' in kwargs else inputs
         
         return self.decoder_head((tensorflow.expand_dims(v,1),
-                                  self.base_model(s).last_hidden_state))
+                                  self.base_model(s)),
+                                 training = kwargs.get('training',False))
     
     
         

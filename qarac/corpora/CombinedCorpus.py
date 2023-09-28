@@ -189,8 +189,8 @@ class CombinedCorpus(keras.utils.Sequence):
                                          for sample in batch])
         result = input_ids
         if inputs:
-            attention_mask = tensorflow.constant(input_ids.numpy().apply(lambda x: 0.0 if x==self.pad_token
-                                                                         else 1.0))
+            attention_mask = tensorflow.constant(numpy.notequal(input_ids.numpy(),
+                                                                self.pad_token).astype(int))
             result = {'input_ids':input_ids,
                       'attention_mask':attention_mask}
         return result

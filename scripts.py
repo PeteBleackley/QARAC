@@ -3,6 +3,7 @@ import os
 import re
 import argparse
 import pickle
+import numpy
 import tokenizers
 import transformers
 import huggingface_hub
@@ -16,6 +17,9 @@ import tensorflow
 import spacy
 import pandas
 import qarac.utils.CoreferenceResolver
+import nltk.corpus
+import difflib
+import scipy.stats
 
 
 
@@ -149,7 +153,66 @@ def train_models(path):
     keras.utils.plot_model(trainer,'trainer_model.png')
     keras.utils.plot_model(trainer.answer_encoder,'encoder_model.png')
     keras.utils.plot_model(trainer.decoder,'decoder_model.png')
-                                                              
+    
+def test_encode_decode(path):
+    encoder = transformers.Transformer.from_pretrained('{}/qarac-roberta-answer-encoder'.format(path))
+    decoder = transformers.Transformer.from_pretrained('{}/qarac-robeerta-decoder'.format(path))
+    tokenizer=tokenizers.Tokenizer.from_pretrained('roberta-base')
+    exclude = tokenizer.encode('<s> </s> <pad>').ids
+    analyser = difflib.SequenceMatcher(lambda x: x in exclude)
+    bnc = nltk.corpus.reader.bnc.BNCCorpusReader('/'.join([os.environ['HOME'],
+                                                                'BNC',
+                                                                'Texts']),  
+                                                      fileids=r'[A-K]/\w*/\w*\.xml')
+    matches = []
+    batch = []
+    pad_token = tokenizer.token_to_id('<pad>')
+    for sent in bnc.sents(strip_space=False):
+        batch.append(tokenizer.encode(''.join(sent)))
+        if len(batch)==32:
+            maxlen = max((len(sentence) for sentence in batch))
+            for sample in batch:
+                sample.pad(maxlen,pad_id=pad_token)
+            input_ids = tensorflow.constant([sample.ids for sample in batch])
+            attention_mask = tensorflow.constant(numpy.notequal(input_ids.numpy(),
+                                                                pad_token).astype(int))
+            vectors = encoder(input_ids,
+                              attention_mask)
+            decoded = decoder.generate(vector=vectors)
+            for (s1,s2) in zip(batch,decoded):
+                analyser.set_seqs(s1.ids, s2)
+                matches.append(analyser.ratio())
+            batch = []
+    if len(batch)!=0:
+        maxlen = max((len(sentence) for sentence in batch))
+        for sample in batch:
+            sample.pad(maxlen,pad_id=pad_token)
+        input_ids = tensorflow.constant([sample.ids for sample in batch])
+        attention_mask = tensorflow.constant(numpy.notequal(input_ids.numpy(),
+                                                            pad_token).astype(int))
+        vectors = encoder(input_ids,
+                          attention_mask)
+        decoded = decoder.generate(vector=vectors)
+        for (s1,s2) in zip(batch,decoded):
+            analyser.set_seqs(s1.ids, s2)
+            matches.append(analyser.ratio())
+        matches = numpy.array(matches)
+        print("Accuracy: mean = {0}, sd = {1}".format(matches.mean(),
+                                                  matches.sd()))
+        (alpha,beta,loc,scale)=scipy.stats.beta.fit(matches,floc=0.0,fscale=1.0)
+        print("Beta distribution parameters alpha = {0}, beta = {1}".format(alpha,beta))
+        (hist,bins) = numpy.histogram(matches,bins='fd')
+        with pandas.option_context('plotting.backend','matploblib.backends.backend_svg') as options:
+            axes = pandas.Series(hist,index=(bins[1:]+bins[:-1]/2)).plot.bar()
+            axes.get_figure().savefig('encode_decode_histogram.svg')
+        percent = numpy.linspace(0.0,1.0,101)
+        percentiles = numpy.quantile(matches,percent)
+        with pandas.option_context('plotting.backend','matplotlib.backends.backend_svg') as options:
+            axes = pandas.Series(percentiles, index=percent).plot.bar()
+            axes.get_figure().savefig('encode_decode_percentile.svg')
+        
+    
+                
     
     
     

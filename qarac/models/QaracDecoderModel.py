@@ -134,6 +134,14 @@ class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_t
                                   self.base_model(s)),
                                  training = kwargs.get('training',False))
     
+    def prepare_inputs_for_generation(self, 
+                                      input_ids, 
+                                      attention_mask=None,
+                                      **kwargs):
+        if attention_mask is None:
+            attention_mask = tensorflow.ones_like(input_ids)
+        return {'input_ids':input_ids,
+                'attention_mask':attention_mask}
     
         
     

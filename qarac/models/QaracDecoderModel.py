@@ -70,10 +70,10 @@ class QaracDecoderHead(keras.layers.Layer):
             Predicted text
 
         """
-        vectors = self.concat(vector, hidden_states)
-        attentions = attention_mask if attention_mask is None else self.concat(tensorflow.ones((hidden_states.shape(0),
-                                                                                                1)),
-                                                                               attention_mask)
+        vectors = self.concat([vector, hidden_states])
+        attentions = attention_mask if attention_mask is None else self.concat([tensorflow.ones((hidden_states.shape(0),
+                                                                                                 1)),
+                                                                                attention_mask])
         l0 = self.layer_0(vectors,
                           attentions,
                           None,

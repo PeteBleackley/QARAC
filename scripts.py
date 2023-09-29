@@ -381,6 +381,21 @@ def test_reasoning(path):
             axes.get_figure().savefig('reasoning_percentile.svg')
         
             
+def test_consistency(path):
+    encoder = transformers.Transformer.from_pretrained('{}/qarac-roberta-answer-encoder'.format(path))
+    tokenizer = tokenizer=tokenizers.Tokenizer.from_pretrained('roberta-base')
+    data = pandas.read_csv('corpora/snli_1.0_test.csv')
+    data = data.loc[data['gold_label']!='-']
+    pad_token=tokenizer.token_to_id('<pad>')
+    def tokenize(column):
+        return tokenizer.encode_batch(column.apply(lambda x:tokenizers.TextInputSequence(x)),
+                                      add_special_tokens=False)
+    s0 =tokenize(data['sentence1'])
+    s1 = tokenize(data['sentence1'])
+    maxlen = max((len(sentence for sentence in s0)))
+    for sentence in s0:
+        sentence.pad(maxlen,pad_id=pad_token)
+    s0_in = tensorflow
     
                
     
@@ -405,4 +420,6 @@ if __name__ == '__main__':
         test_encode_decode(args.filename)
     elif args.task== 'test_question_answering':
         test_question_answering(args.filename)
+    elif args.task=="test_reasoning":
+        test_reasoning(args.filename)
    

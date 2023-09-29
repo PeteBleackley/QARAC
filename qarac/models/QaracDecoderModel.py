@@ -77,10 +77,16 @@ class QaracDecoderHead(keras.layers.Layer):
         l0 = self.layer_0(vectors,
                           attentions,
                           None,
+                          None,
+                          None,
+                          None,
                           False,
                           training)
         return self.head(self.layer1(l0.last_hidden_state[:,1:],
                                      attention_mask,
+                                     None,
+                                     None,
+                                     None,
                                      None,
                                      False,
                                      training))

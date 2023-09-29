@@ -3,6 +3,7 @@ import os
 import re
 import argparse
 import pickle
+import json
 import numpy
 import tokenizers
 import transformers
@@ -20,6 +21,7 @@ import qarac.utils.CoreferenceResolver
 import nltk.corpus
 import difflib
 import scipy.stats
+import scipy.spatial
 
 
 
@@ -133,10 +135,12 @@ def train_models(path):
                                                                 question_answering='corpora/question_answering.csv',
                                                                 reasoning='corpora/reasoning_train.csv',
                                                                 consistency='corpora/consistency.csv')
-    trainer.fit(training_data,
-                epochs=10,
-                workers=16,
-                use_multiprocessing=True)
+    history = trainer.fit(training_data,
+                          epochs=10,
+                          workers=16,
+                          use_multiprocessing=True)
+    with open('history.json','w') as jsonfile:
+        json.dump(history.history,jsonfile)
     huggingface_hub.login(token=os.environ['HUGGINGFACE_TOKEN'])
     trainer.question_encoder.push_to_hub('{}/qarac-roberta-question-encoder'.format(path))
     trainer.answer_encoder.push_to_hub('{}/qarac-roberta-answer-encoder'.format(path))
@@ -211,9 +215,86 @@ def test_encode_decode(path):
             axes = pandas.Series(percentiles, index=percent).plot.bar()
             axes.get_figure().savefig('encode_decode_percentile.svg')
         
-    
-                
-    
+        
+def test_question_answering(path):
+    question_encoder = transformers.Transformer.from_pretrained('{}/qarac-roberta-question-encoder'.format(path))
+    answer_encoder = transformers.Transformer.from_pretrained('{}/qarac-roberta-answer-encoder'.format(path))
+    tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
+    data = pandas.read_csv('WikiQA.tsv',sep='\t')
+    data['QNum']=data['QuestionID'].apply(lambda x: int(x[1:]))
+    nlp = spacy.load('en_core_web_trf')
+    predictor = qarac.utils.CoreferenceResolver.CoreferenceResolver()
+    data['Resolved_answer'] = data.groupby('QNum')['Sentence'].transform(predictor)
+    unique_questions = data.groupby('QNum')['Question'].first()
+    cleaned_questions = pandas.Series([clean_question(doc)
+                                       for doc in nlp.pipe(unique_questions)],
+                                      index = unique_questions.index)
+
+    def tokenize(column):
+        return tokenizer.encode_batch(column.apply(lambda x:tokenizers.TextInputSequence(x)),
+                                      add_special_tokens=False)
+    questions = tokenize(cleaned_questions)
+    maxlen=max((len(question) for question in questions))
+    pad_token = tokenizer.token_to_id('<pad>')
+    for question in questions:
+        question.pad(maxlen,pad_id=pad_token)
+    question_ids = tensorflow.constant([question.ids
+                                        for question in questions])
+    attention_mask = tensorflow.constant(numpy.not_equal(question_ids.numpy(),
+                                                         pad_token).astype(int))
+    q_vectors = question_encoder(question_ids,
+                                 attention_mask=attention_mask).numpy()
+    answers = tokenize(data['Resolved_answer'])
+    maxlen = max((len(answer) for answer in answers))
+    for answer in answers:
+        answer.pad(maxlen,pad_id=pad_token)
+    answer_ids = tensorflow.constant([answer.ids
+                                      for answer in answers])
+    attention_mask = tensorflow.constant(numpy.not_equal(answer_ids.numpy(),
+                                                         pad_token).astype(int))
+    answer_lookup = scipy.spatial.KDTree(answer_encoder(answer_ids,
+                                                        attention_mask=attention_mask).numpy())
+    n_correct = 0
+    all_distances = 0.0
+    correct_distances = 0.0
+    wrong_distances = 0.0
+    all_sq = 0.0
+    correct_sq = 0.0
+    wrong_sq = 0.0
+    for (i,qv) in enumerate(q_vectors):
+        (d,row) = answer_lookup.query(qv)
+        dsq=d**2.0
+        correct = (row['QNum']==i and row['Label']==1)
+        all_distances+=d
+        all_sq+=dsq
+        if correct:
+            n_correct+=1
+            correct_distances+=d
+            correct_sq+=dsq
+        else:
+            wrong_distances+=d
+            wrong_sq+=dsq
+    N = cleaned_questions.shape[0]
+    print("{0} questions, {1} possible answers, {2} correct answers".format(N,
+                                                                            data.shape[0],
+                                                                            n_correct))
+    accuracy = n_correct/N
+    baseline = N/data.shape[0] 
+    kappa = 1.0 - ((1.0-accuracy)/(1.0-baseline))      
+    print(("Accuracy: {0}, Baseline {1}, kappa{2} ".format(accuracy,baseline,kappa)))   
+    mean_dist =all_distances/N
+    mean_sq = all_sq/N
+    all_sd = numpy.sqrt(mean_sq-(mean_dist**2.0))  
+    print("Question-answer distances")        
+    print("All: mean {0}, sd {1}".format(mean_dist,all_sd))   
+    correct_mean = correct_distances/n_correct
+    correct_meansq = correct_sq/n_correct
+    correct_sd = numpy.sqrt(correct_meansq - (correct_mean**2.0))    
+    print("Correct: mean {0}, sd {1}".format(correct_mean,correct_sd))     
+    wrong_mean = wrong_distances/(N-n_correct)  
+    wrong_meansq = wrong_sq/(N-n_correct)     
+    wrong_sd = numpy.sqrt(wrong_meansq - (wrong_mean**2.0))    
+    print("Wrong: mean {0}, sd {1}".format(wrong_mean,wrong_sd))               
     
     
 if __name__ == '__main__':
@@ -232,4 +313,8 @@ if __name__ == '__main__':
         prepare_training_datasets()
     elif args.task == 'train_models':
         train_models(args.filename)
+    elif args.task == 'test_encode_decode':
+        test_encode_decode(args.filename)
+    elif args.task== 'test_question_answering':
+        test_question_answering(args.filename)
    

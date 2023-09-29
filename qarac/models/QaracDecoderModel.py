@@ -82,7 +82,7 @@ class QaracDecoderHead(keras.layers.Layer):
                           None,
                           False,
                           training)
-        return self.head(self.layer_1(l0.last_hidden_state[:,1:],
+        return self.head(self.layer_1(l0[0][:,1:],
                                       attention_mask,
                                       None,
                                       None,

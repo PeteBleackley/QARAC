@@ -27,7 +27,7 @@ import scipy.spatial
 
 def decoder_loss(y_true,y_pred):
     return keras.losses.sparse_categorical_crossentropy(y_true,
-                                                        y_pred.logits,
+                                                        y_pred,
                                                         logits=True)
 
 def capitalise(token,i):

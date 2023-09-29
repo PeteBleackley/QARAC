@@ -47,8 +47,12 @@ class GlobalAttentionPoolingHead(keras.layers.Layer):
 
         """
         width = input_shape[-1]
-        self.global_projection = self.add_weight('global projection',shape=(width,width))
-        self.local_projection = self.add_weight('local projection',shape=(width,width))
+        self.global_projection = self.add_weight('global projection',
+                                                 shape=(width,width),
+                                                 Trainable=True)
+        self.local_projection = self.add_weight('local projection',
+                                                shape=(width,width),
+                                                trainable=True)
         self.built=True
     
     @tensorflow.function

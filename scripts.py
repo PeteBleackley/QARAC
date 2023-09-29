@@ -294,7 +294,95 @@ def test_question_answering(path):
     wrong_mean = wrong_distances/(N-n_correct)  
     wrong_meansq = wrong_sq/(N-n_correct)     
     wrong_sd = numpy.sqrt(wrong_meansq - (wrong_mean**2.0))    
-    print("Wrong: mean {0}, sd {1}".format(wrong_mean,wrong_sd))               
+    print("Wrong: mean {0}, sd {1}".format(wrong_mean,wrong_sd))    
+
+def test_reasoning(path):
+    encoder = transformers.Transformer.from_pretrained('{}/qarac-roberta-answer-encoder'.format(path))
+    decoder = transformers.Transformer.from_pretrained('{}/qarac-robeerta-decoder'.format(path))
+    tokenizer=tokenizers.Tokenizer.from_pretrained('roberta-base')
+    exclude = tokenizer.encode('<s> </s> <pad>').ids
+    analyser = difflib.SequenceMatcher(lambda x: x in exclude)
+    data = pandas.read_csv('corpora/Avicenna_Test.csv',encoding='iso-8859-1')
+    data = data.loc[data['Syllogistic relation']=='yes']
+    def tokenize(column):
+        return tokenizer.encode_batch(column.apply(lambda x:tokenizers.TextInputSequence(x)),
+                                      add_special_tokens=False)
+    p0 = tokenize(data['Premise 1'])
+    p1 = tokenize(data['Premise 2'])
+    c = tokenize(data['Conclusion'])
+    p0_batch = []
+    p1_batch = []
+    c_batch = []
+    n=0
+    pad_token = tokenizer.token_to_id('<pad>')
+    matches=[]
+    for (p0_sample,p1_sample,c_sample) in zip(p0,p1,c):
+        p0_batch.append(p0_sample)
+        p1_batch.append(p1_sample)
+        c_batch.append(c_sample)
+        n+=1
+        if n==32:
+            maxlen=max((len(sample for sample in p0_batch)))
+            for sample in p0_batch:
+                sample.pad(maxlen,pad_token)
+            p0_in = tensorflow.constant([sample.ids for sample in p0.batch])
+            p0_attn = tensorflow.constant(numpy.not_equal(p0_in.numpy(),
+                                                          pad_token).astype(int))
+            maxlen=max((len(sample for sample in p1_batch)))
+            for sample in p1_batch:
+                sample.pad(maxlen,pad_token)
+            p1_in = tensorflow.constant([sample.ids for sample in p1.batch])
+            p1_attn = tensorflow.constant(numpy.not_equal(p0_in.numpy(),
+                                                          pad_token).astype(int))
+            predictions = decoder.generate(vector=(encoder(p0_in,
+                                                           attention_mask=p0_attn)
+                                                   +encoder(p1_in,
+                                                            attention_mask=p1_attn)))
+            for (s1,s2) in zip(c_batch,predictions):
+                analyser.set_seqs(s1.ids, s2)
+                matches.append(analyser.ratio())
+            n=0
+            p0_batch=[]
+            p1_batch=[]
+            c_batch=[]
+        if n!=0:
+            maxlen=max((len(sample for sample in p0_batch)))
+            for sample in p0_batch:
+                sample.pad(maxlen,pad_token)
+            p0_in = tensorflow.constant([sample.ids for sample in p0.batch])
+            p0_attn = tensorflow.constant(numpy.not_equal(p0_in.numpy(),
+                                                          pad_token).astype(int))
+            maxlen=max((len(sample for sample in p1_batch)))
+            for sample in p1_batch:
+                sample.pad(maxlen,pad_token)
+            p1_in = tensorflow.constant([sample.ids for sample in p1.batch])
+            p1_attn = tensorflow.constant(numpy.not_equal(p0_in.numpy(),
+                                                          pad_token).astype(int))
+            predictions = decoder.generate(vector=(encoder(p0_in,
+                                                           attention_mask=p0_attn)
+                                                   +encoder(p1_in,
+                                                            attention_mask=p1_attn)))
+            for (s1,s2) in zip(c_batch,predictions):
+                analyser.set_seqs(s1.ids, s2)
+                matches.append(analyser.ratio())
+        matches = numpy.array(matches)
+        print("Accuracy: mean = {0}, sd = {1}".format(matches.mean(),
+                                                  matches.sd()))
+        (alpha,beta,loc,scale)=scipy.stats.beta.fit(matches,floc=0.0,fscale=1.0)
+        print("Beta distribution parameters alpha = {0}, beta = {1}".format(alpha,beta))
+        (hist,bins) = numpy.histogram(matches,bins='fd')
+        with pandas.option_context('plotting.backend','matploblib.backends.backend_svg') as options:
+            axes = pandas.Series(hist,index=(bins[1:]+bins[:-1]/2)).plot.bar()
+            axes.get_figure().savefig('reasoning_histogram.svg')
+        percent = numpy.linspace(0.0,1.0,101)
+        percentiles = numpy.quantile(matches,percent)
+        with pandas.option_context('plotting.backend','matplotlib.backends.backend_svg') as options:
+            axes = pandas.Series(percentiles, index=percent).plot.bar()
+            axes.get_figure().savefig('reasoning_percentile.svg')
+        
+            
+    
+               
     
     
 if __name__ == '__main__':

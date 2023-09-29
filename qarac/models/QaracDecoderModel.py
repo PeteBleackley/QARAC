@@ -89,7 +89,7 @@ class QaracDecoderHead(keras.layers.Layer):
                                       None,
                                       None,
                                       False,
-                                      training))
+                                      training)[0])
 
 class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_tf_utils.TFGenerationMixin):
     

@@ -28,7 +28,7 @@ import scipy.spatial
 def decoder_loss(y_true,y_pred):
     return keras.losses.sparse_categorical_crossentropy(y_true,
                                                         y_pred,
-                                                        logits=True)
+                                                        from_logits=True)
 
 def capitalise(token,i):
     return token.text_with_ws.title() if i==0 or token.tag_.startswith('NNP') else token.text_with_ws.lower()

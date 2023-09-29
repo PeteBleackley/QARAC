@@ -80,7 +80,7 @@ class QaracTrainerModel(keras.Model):
         results['question_answering'] = self.question_encoder(inputs['question']) - self.answer_encoder(inputs['answer'])
         results['reasoning'] = self.decoder((self.answer_encoder(inputs['proposition0'])
                                              +self.answer_encoder(inputs['proposition1']),
-                                             self.inputs['conclusion_offset']))
+                                             inputs['conclusion_offset']))
         results['consistency'] = self.consistency((self.answer_encoder(inputs['statement0']),
                                                    self.answer_encoder(inputs['statement1'])))
         return results

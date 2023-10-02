@@ -22,13 +22,11 @@ import nltk.corpus
 import difflib
 import scipy.stats
 import scipy.spatial
+import seaborn
 
 
 
-def decoder_loss(y_true,y_pred):
-    return keras.losses.sparse_categorical_crossentropy(y_true,
-                                                        y_pred,
-                                                        from_logits=True)
+
 
 def capitalise(token,i):
     return token.text_with_ws.title() if i==0 or token.tag_.startswith('NNP') else token.text_with_ws.lower()
@@ -123,9 +121,9 @@ def train_models(path):
     trainer = qarac.models.QaracTrainerModel.QaracTrainerModel(encoder_base, 
                                                                decoder_base, 
                                                                tokenizer)
-    losses={'encode_decode':decoder_loss,
+    losses={'encode_decode':keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             'question_answering':keras.losses.mean_squared_error,
-            'reasoning':decoder_loss,
+            'reasoning':keras.losses.SparseCategoricalCrossentropy(from_logits=True),
             'consistency':keras.losses.mean_squared_error}
     optimizer = keras.optimizers.Nadam(learning_rate=keras.optimizers.schedules.ExponentialDecay(1.0e-5, 100, 0.99))
     trainer.compile(optimizer=optimizer,
@@ -395,11 +393,70 @@ def test_consistency(path):
     maxlen = max((len(sentence for sentence in s0)))
     for sentence in s0:
         sentence.pad(maxlen,pad_id=pad_token)
-    s0_in = tensorflow
+    s0_in = tensorflow.constant([sentence.ids for sentence in s0])
+    s0_attn = tensorflow.constant(numpy.not_equal(s0_in.numpy(),
+                                                  pad_token).astype(int))
+    maxlen = max((len(sentence for sentence in s1)))
+    for sentence in s1:
+        sentence.pad(maxlen,pad_id=pad_token)
+    s1_in = tensorflow.constant([sentence.ids for sentence in s1])
+    s1_attn = tensorflow.constant(numpy.not_equal(s1_in.numpy(),
+                                                  pad_token).astype(int))
+    s0_vec = tensorflow.l2_norm(encoder(s0_in,attention_mask=s0_attn),
+                                axis=1)
+    s1_vec = tensorflow.l2_norm(encoder(s1_in,attention_mask=s1_attn),
+                                axis=1)
+    @tensorflow.function
+    def dotprod(vecs):
+        (x,y)=vecs
+        return tensorflow.tensordot(x,y,axes=1)
+    consistency = tensorflow.vectorized_map(dotprod, (s0_vec,s1_vec)).numpy()
+    results = pandas.DataFrame({'label':data['gold_label'],
+                                'score':consistency})
+    third = 1.0/3.0
+    def predicted_labels(x):
+        return 'entailment' if x>third else 'contradiction' if x<-third else 'neutral'
+    results['prediction'] = results['score'].apply(predicted_labels)
+    confusion=results.groupby('label')['prediction'].value_counts().fillna(0)
+    seaborn.heatmap(confusion).save('consistency_confusion_matrix.svg')
+    correct = pandas.Series({label:confusion[label,label]
+                             for label in confusion.index})
+    print("Accuracy: {}".format(correct.sum()/data.shape[0]))
+    print("Precision")
+    print(correct/confusion.sum(axis='columns'))
+    print("Recall")
+    print(correct/confusion.sum(axis='rows'))
+    def stats(group):
+        (alpha,beta,loc,scale) = scipy.stats.beta.fit(group)
+        mean = group.mean()
+        sd = group.std()
+        return pandas.Series({'mean':mean,
+                              'sd':sd,
+                              'min':loc,
+                              'max':loc+scale,
+                              'alpha':alpha,
+                              'beta':beta})
+    print(results.groupby('label')['score'].apply(stats))
+    quartiles = numpy.quantile(consistency,[0.0,0.25,0.5,0.75,1.0])
+    IQR = quartiles[3]-quartiles[1]
+    bin_width = 2.0*IQR/(data.shape[0]**1.5)
+    n_bins = int((quartiles[4]-quartiles[0])/bin_width)
+    bins = numpy.linspace(quartiles[0],quartiles[4],n_bins)
+    def hist(col):
+        (result,_) = numpy.histogram(col,bins)
+        return result
+    histograms = results.groupby('label')['score'].apply(hist)
+    histograms.coluumns = (bins[1:]+bins[:-1])/2
+    with pandas.option_context('plotting.backend','matploblib.backends.backend_svg') as options:
+        axes=histograms.T.plot.bar(stacked=True)
+        axes.get_figure().savefig('consistency_histograms.svg')
+    percent = numpy.linspace(0.0,1.0,101)
+    percentiles = results.groupby('label')['score'].apply(lambda x: numpy.percentile(x,percent))
+    with pandas.option_context('plotting.backend','matploblib.backends.backend_svg') as options:
+        axes=percentiles.T.plot.line()
+        axes.get_figure().savefig('consistency_percentiles.svg')
     
-               
-    
-    
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='QARAC',
                                      description='Experimental NLP system, aimed at improving factual accuracy')
@@ -422,4 +479,6 @@ if __name__ == '__main__':
         test_question_answering(args.filename)
     elif args.task=="test_reasoning":
         test_reasoning(args.filename)
+    elif args.task=='test_consistency':
+        test_consistency(args.filename)
    

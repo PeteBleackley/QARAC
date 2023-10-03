@@ -99,4 +99,15 @@ class CorpusLoader(object):
             if self.label is not None:
                 Y[self.label]=row[self.label]
             yield (X,Y)
+            
+    def max_lengths(self):
+        result = {column:max((row[column]
+                              for row in self.dataset))
+                  for column in self.text_inputs}
+        for (column,(inside,outside)) in self.text_outputs.items():
+            n = result[column] if column in result else max((len(row[column]
+                                                                 for row in self.dataset)))
+            result[inside] = n+1
+            result[outside] = n+1
+        return result
         

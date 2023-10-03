@@ -39,7 +39,7 @@ class CombinedCorpus(keras.utils.Sequence):
                                                                'encode_decode')})
         n_samples = len(self.all_text)
 
-        self.n_batches = numpy.ceil(n_samples/32.0).astype(int)
+        self.n_batches = n_samples//32
         self.question_answering = CorpusRepeater.CorpusRepeater(CorpusLoader.CorpusLoader(kwargs['question_answering'], 
                                                                                           tokenizer, 
                                                                                           ['question',
@@ -63,6 +63,12 @@ class CombinedCorpus(keras.utils.Sequence):
         self.batches = None
         self.pad_token = tokenizer.token_to_id('<pad>')
         self.on_epoch_end()
+        self.max_lengths = {}
+        for corpus in (self.all_text,
+                       self.question_answering,
+                       self.reasoning,
+                       self.consistency):
+            self.max_lengths.update(corpus.max_lengths())
         
     def __len__(self):
         """
@@ -127,8 +133,7 @@ class CombinedCorpus(keras.utils.Sequence):
                 yield(batch)
                 batch = []
                 n=0
-        if n!=0:
-            yield batch
+        
             
     def on_epoch_end(self):
         self.batches = self.make_batches()
@@ -161,13 +166,15 @@ class CombinedCorpus(keras.utils.Sequence):
             n+=1
         
         for (key,value) in X.items():
-            X[key] = self.pad(value)
+            X[key] = self.pad(value,self.max_lengths[key])
         for (key,value) in Y.items():
-            Y[key] = tensorflow.constant(value) if key=='consistency' else self.pad(value,False)
+            Y[key] = tensorflow.constant(value) if key=='consistency' else self.pad(value,
+                                                                                    self.max_lengths[key],
+                                                                                    False)
         Y['question_answering'] = tensorflow.zeros((n,768))
         return (X,Y)
     
-    def pad(self,batch,inputs=True):
+    def pad(self,batch,maxlen,inputs=True):
         """
         Pads a batch of samples to uniform length
 
@@ -182,7 +189,6 @@ class CombinedCorpus(keras.utils.Sequence):
             Padded data
 
         """
-        maxlen = max((len(sample) for sample in batch))
         for sample in batch:
             sample.pad(maxlen,pad_id=self.pad_token)
         input_ids = tensorflow.constant([sample.ids

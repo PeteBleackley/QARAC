@@ -47,5 +47,8 @@ class CorpusRepeater(object):
                 yield sample
         for (_,sample) in zip(range(self.remainder),self.corpus):
             yield sample
+            
+    def max_lengths(self):
+        return self.corpus.max_lengths()
         
         

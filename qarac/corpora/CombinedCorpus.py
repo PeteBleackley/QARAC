@@ -166,7 +166,7 @@ class CombinedCorpus(keras.utils.Sequence):
             n+=1
         
         X={key:self.pad(value,self.max_lengths[key])
-           for (key,value) in X.values()}
+           for (key,value) in X.items()}
         Y={key:tensorflow.constant(value) if key=='consistency' else self.pad(value,
                                                                               self.max_lengths[key],
                                                                               False)

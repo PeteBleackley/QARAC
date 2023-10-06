@@ -133,13 +133,6 @@ def train_models(path):
                                                                 question_answering='corpora/question_answering.csv',
                                                                 reasoning='corpora/reasoning_train.csv',
                                                                 consistency='corpora/consistency.csv')
-    (X,Y) = training_data[0]
-    trainer(X)
-    print(trainer.summary())
-    print(trainer.question_encoder.summary())
-    print(trainer.answer_encoder.summary())
-    print(trainer.decoder.summary())
-    exit()
     history = trainer.fit(training_data,
                           epochs=10)
     with open('history.json','w') as jsonfile:

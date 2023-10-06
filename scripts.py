@@ -133,10 +133,15 @@ def train_models(path):
                                                                 question_answering='corpora/question_answering.csv',
                                                                 reasoning='corpora/reasoning_train.csv',
                                                                 consistency='corpora/consistency.csv')
+    (X,Y) = training_data[0]
+    trainer(X)
+    print(trainer.summary())
+    print(trainer.question_encoder.summary())
+    print(trainer.answer_encoder.summary())
+    print(trainer.decoder.summary())
+    exit()
     history = trainer.fit(training_data,
-                          epochs=10,
-                          workers=16,
-                          use_multiprocessing=True)
+                          epochs=10)
     with open('history.json','w') as jsonfile:
         json.dump(history.history,jsonfile)
     huggingface_hub.login(token=os.environ['HUGGINGFACE_TOKEN'])

@@ -37,7 +37,7 @@ class CombinedCorpus(keras.utils.Sequence):
                                                   ['all_text'], 
                                                   {'all_text':('offset_text',
                                                                'encode_decode')})
-        n_samples = len(self.all_text)
+        n_samples = len(self.all_text) 
 
         self.n_batches = n_samples//32
         self.question_answering = CorpusRepeater.CorpusRepeater(CorpusLoader.CorpusLoader(kwargs['question_answering'], 
@@ -165,12 +165,12 @@ class CombinedCorpus(keras.utils.Sequence):
                 Y[key].append(value)
             n+=1
         
-        for (key,value) in X.items():
-            X[key] = self.pad(value,self.max_lengths[key])
-        for (key,value) in Y.items():
-            Y[key] = tensorflow.constant(value) if key=='consistency' else self.pad(value,
-                                                                                    self.max_lengths[key],
-                                                                                    False)
+        X={key:self.pad(value,self.max_lengths[key])
+           for (key,value) in X.values()}
+        Y={key:tensorflow.constant(value) if key=='consistency' else self.pad(value,
+                                                                              self.max_lengths[key],
+                                                                              False)
+           for (key,value) in Y.items()}
         Y['question_answering'] = tensorflow.zeros((n,768))
         return (X,Y)
     

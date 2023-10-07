@@ -1,8 +1,6 @@
 
 import os
-import re
 import argparse
-import pickle
 import json
 import numpy
 import tokenizers
@@ -13,8 +11,7 @@ import qarac.corpora.Batcher
 import qarac.models.qarac_base_model
 import qarac.models.QaracTrainerModel
 import qarac.corpora.CombinedCorpus
-import keras
-import tensorflow
+import torch
 import spacy
 import pandas
 import qarac.utils.CoreferenceResolver
@@ -23,9 +20,23 @@ import difflib
 import scipy.stats
 import scipy.spatial
 import seaborn
+import tqdm
 
+EPSILON = 1.0e-12
 
-
+class CombinedLoss(torch.nn.Module):
+    def __init__(self):
+        super(CombinedLoss,self).__init__()
+        self.component_losses = (torch.nn.CrossEntropyLoss(),
+                                 torch.nn.MSELoss(),
+                                 torch.nn.CrossEntropyLoss(),
+                                 torch.nn.MSELoss())
+        
+    def forward(self,y_pred,y_true):
+        return torch.sum((fn(pred,obs)
+                          for (fn,pred,obs) in zip(self.component_losses,
+                                                   y_pred,
+                                                   y_true)))
 
 
 def capitalise(token,i):
@@ -67,12 +78,12 @@ def train_base_model(task,filename):
                                                            768, 
                                                            12,
                                                            task=='decode')
-    optimizer = keras.optimizers.Nadam(learning_rate=keras.optimizers.schedules.ExponentialDecay(1.0e-5, 100, 0.99))
-    model.compile(optimizer=optimizer,loss='sparse_categorical_crossentropy',metrics='accuracy')
-    model.fit(train_data,
-              epochs=100,
-              workers = 16,
-              use_multiprocessing=True)
+    #optimizer = keras.optimizers.Nadam(learning_rate=keras.optimizers.schedules.ExponentialDecay(1.0e-5, 100, 0.99))
+    #model.compile(optimizer=optimizer,loss='sparse_categorical_crossentropy',metrics='accuracy')
+    #model.fit(train_data,
+    #          epochs=100,
+    #          workers = 16,
+    #          use_multiprocessing=True)
     test_data=qarac.corpora.Batcher.Batcher(test)
     print(model.evaluate(test_data))
     model.save(filename)
@@ -121,38 +132,45 @@ def train_models(path):
     trainer = qarac.models.QaracTrainerModel.QaracTrainerModel(encoder_base, 
                                                                decoder_base, 
                                                                tokenizer)
-    losses={'encode_decode':keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            'question_answering':keras.losses.mean_squared_error,
-            'reasoning':keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            'consistency':keras.losses.mean_squared_error}
-    optimizer = keras.optimizers.Nadam(learning_rate=keras.optimizers.schedules.ExponentialDecay(1.0e-5, 100, 0.99))
-    trainer.compile(optimizer=optimizer,
-                    loss=losses)
+    loss_fn = CombinedLoss()
+    optimizer = torch.optim.NAdam(trainer.parameters(),lr=5.0e-5)
+    scheduler = torch.optim.ExponentialDecay(optimizer,gamma=0.9)
     training_data = qarac.corpora.CombinedCorpus.CombinedCorpus(tokenizer,
                                                                 all_text='corpora/all_text.csv',
                                                                 question_answering='corpora/question_answering.csv',
                                                                 reasoning='corpora/reasoning_train.csv',
                                                                 consistency='corpora/consistency.csv')
-    history = trainer.fit(training_data,
-                          epochs=10)
-    with open('history.json','w') as jsonfile:
-        json.dump(history.history,jsonfile)
+    n_batches = len(training_data)
+    history = []
+    for epoch in range(10):
+        print("Epoch",epoch)
+        epoch_history = []
+        for (batch,(X,Y)) in enumerate(tqdm.tqdm(training_data)):
+            prediction = trainer(X['all_text'],
+                                 X['offset_text'],
+                                 X['question'],
+                                 X['answer'],
+                                 X['proposition0'],
+                                 X['proposition1'],
+                                 X['conclusion_offset'],
+                                 X['statement0'],
+                                 X['statement1'])
+            loss = loss_fn(prediction,Y)
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            if batch % 1024 == 0 or batch == n_batches-1:
+                epoch_history.append({'batch':batch,
+                                      'loss':loss.item()})
+        scheduler.step()
+        history.append(epoch_history)
+    with open('training_history.json','w') as jsonfile:
+        json.dump(history,jsonfile)
     huggingface_hub.login(token=os.environ['HUGGINGFACE_TOKEN'])
     trainer.question_encoder.push_to_hub('{}/qarac-roberta-question-encoder'.format(path))
     trainer.answer_encoder.push_to_hub('{}/qarac-roberta-answer-encoder'.format(path))
     trainer.decoder.push_to_hub('{}/qarac-roberta-decoder'.format(path))
-    with open('model_summaries.txt') as summaries:
-        summaries.write('TRAINER MODEL\n')
-        summaries.write(trainer.summary())
-        summaries.write('QUESTION ENCODER\n')
-        summaries.write(trainer.question_encoder.summary())
-        summaries.write('ANSWER ENCODER\n')
-        summaries.write(trainer.answer_encoder.summary())
-        summaries.write('DECODER\n')
-        summaries.write(trainer.decoder.summary())
-    keras.utils.plot_model(trainer,'trainer_model.png')
-    keras.utils.plot_model(trainer.answer_encoder,'encoder_model.png')
-    keras.utils.plot_model(trainer.decoder,'decoder_model.png')
+    
     
 def test_encode_decode(path):
     encoder = transformers.Transformer.from_pretrained('{}/qarac-roberta-answer-encoder'.format(path))
@@ -173,9 +191,8 @@ def test_encode_decode(path):
             maxlen = max((len(sentence) for sentence in batch))
             for sample in batch:
                 sample.pad(maxlen,pad_id=pad_token)
-            input_ids = tensorflow.constant([sample.ids for sample in batch])
-            attention_mask = tensorflow.constant(numpy.notequal(input_ids.numpy(),
-                                                                pad_token).astype(int))
+            input_ids = torch.tensor([sample.ids for sample in batch])
+            attention_mask = torch.not_equal(input_ids,pad_token)
             vectors = encoder(input_ids,
                               attention_mask)
             decoded = decoder.generate(vector=vectors)
@@ -187,9 +204,8 @@ def test_encode_decode(path):
         maxlen = max((len(sentence) for sentence in batch))
         for sample in batch:
             sample.pad(maxlen,pad_id=pad_token)
-        input_ids = tensorflow.constant([sample.ids for sample in batch])
-        attention_mask = tensorflow.constant(numpy.notequal(input_ids.numpy(),
-                                                            pad_token).astype(int))
+        input_ids = torch.tensor([sample.ids for sample in batch])
+        attention_mask = torch.not_equal(input_ids, pad_token)
         vectors = encoder(input_ids,
                           attention_mask)
         decoded = decoder.generate(vector=vectors)
@@ -234,20 +250,20 @@ def test_question_answering(path):
     pad_token = tokenizer.token_to_id('<pad>')
     for question in questions:
         question.pad(maxlen,pad_id=pad_token)
-    question_ids = tensorflow.constant([question.ids
-                                        for question in questions])
-    attention_mask = tensorflow.constant(numpy.not_equal(question_ids.numpy(),
-                                                         pad_token).astype(int))
+    question_ids = torch.tensor([question.ids
+                                 for question in questions])
+    attention_mask = torch.not_equal(question_ids,
+                                     pad_token)
     q_vectors = question_encoder(question_ids,
                                  attention_mask=attention_mask).numpy()
     answers = tokenize(data['Resolved_answer'])
     maxlen = max((len(answer) for answer in answers))
     for answer in answers:
         answer.pad(maxlen,pad_id=pad_token)
-    answer_ids = tensorflow.constant([answer.ids
-                                      for answer in answers])
-    attention_mask = tensorflow.constant(numpy.not_equal(answer_ids.numpy(),
-                                                         pad_token).astype(int))
+    answer_ids = torch.tensor([answer.ids
+                               for answer in answers])
+    attention_mask = torch.not_equal(answer_ids,
+                                     pad_token)
     answer_lookup = scipy.spatial.KDTree(answer_encoder(answer_ids,
                                                         attention_mask=attention_mask).numpy())
     n_correct = 0
@@ -321,15 +337,15 @@ def test_reasoning(path):
             maxlen=max((len(sample for sample in p0_batch)))
             for sample in p0_batch:
                 sample.pad(maxlen,pad_token)
-            p0_in = tensorflow.constant([sample.ids for sample in p0.batch])
-            p0_attn = tensorflow.constant(numpy.not_equal(p0_in.numpy(),
-                                                          pad_token).astype(int))
+            p0_in = torch.tensor([sample.ids for sample in p0.batch])
+            p0_attn = torch.not_equal(p0_in,
+                                      pad_token)
             maxlen=max((len(sample for sample in p1_batch)))
             for sample in p1_batch:
                 sample.pad(maxlen,pad_token)
-            p1_in = tensorflow.constant([sample.ids for sample in p1.batch])
-            p1_attn = tensorflow.constant(numpy.not_equal(p0_in.numpy(),
-                                                          pad_token).astype(int))
+            p1_in = torch.tensor([sample.ids for sample in p1.batch])
+            p1_attn = torch.not_equal(p0_in,
+                                      pad_token)
             predictions = decoder.generate(vector=(encoder(p0_in,
                                                            attention_mask=p0_attn)
                                                    +encoder(p1_in,
@@ -345,15 +361,15 @@ def test_reasoning(path):
             maxlen=max((len(sample for sample in p0_batch)))
             for sample in p0_batch:
                 sample.pad(maxlen,pad_token)
-            p0_in = tensorflow.constant([sample.ids for sample in p0.batch])
-            p0_attn = tensorflow.constant(numpy.not_equal(p0_in.numpy(),
-                                                          pad_token).astype(int))
+            p0_in = torch.tensor([sample.ids for sample in p0.batch])
+            p0_attn = torch.not_equal(p0_in,
+                                      pad_token)
             maxlen=max((len(sample for sample in p1_batch)))
             for sample in p1_batch:
                 sample.pad(maxlen,pad_token)
-            p1_in = tensorflow.constant([sample.ids for sample in p1.batch])
-            p1_attn = tensorflow.constant(numpy.not_equal(p0_in.numpy(),
-                                                          pad_token).astype(int))
+            p1_in = torch.tensor([sample.ids for sample in p1.batch])
+            p1_attn = torch.not_equal(p0_in,
+                                      pad_token)
             predictions = decoder.generate(vector=(encoder(p0_in,
                                                            attention_mask=p0_attn)
                                                    +encoder(p1_in,
@@ -391,24 +407,22 @@ def test_consistency(path):
     maxlen = max((len(sentence for sentence in s0)))
     for sentence in s0:
         sentence.pad(maxlen,pad_id=pad_token)
-    s0_in = tensorflow.constant([sentence.ids for sentence in s0])
-    s0_attn = tensorflow.constant(numpy.not_equal(s0_in.numpy(),
-                                                  pad_token).astype(int))
+    s0_in = torch.tensor([sentence.ids for sentence in s0])
+    s0_attn = torch.not_equal(s0_in,
+                              pad_token)
     maxlen = max((len(sentence for sentence in s1)))
     for sentence in s1:
         sentence.pad(maxlen,pad_id=pad_token)
-    s1_in = tensorflow.constant([sentence.ids for sentence in s1])
-    s1_attn = tensorflow.constant(numpy.not_equal(s1_in.numpy(),
-                                                  pad_token).astype(int))
-    s0_vec = tensorflow.l2_norm(encoder(s0_in,attention_mask=s0_attn),
-                                axis=1)
-    s1_vec = tensorflow.l2_norm(encoder(s1_in,attention_mask=s1_attn),
-                                axis=1)
-    @tensorflow.function
-    def dotprod(vecs):
-        (x,y)=vecs
-        return tensorflow.tensordot(x,y,axes=1)
-    consistency = tensorflow.vectorized_map(dotprod, (s0_vec,s1_vec)).numpy()
+    s1_in = torch.tensor([sentence.ids for sentence in s1])
+    s1_attn = torch.not_equal(s1_in,
+                              pad_token)
+    s0_vec = encoder(s0_in,attention_mask=s0_attn)
+    s0_norm = torch.max(torch.linalg.vector_norm(s0_vec,dim=1),EPSILON)
+    s0 = s0_vec/s0_norm
+    s1_vec = encoder(s1_in,attention_mask=s1_attn)
+    s1_norm = torch.max(torch.linalg.vector_norm(s1_vec,dim=1),EPSILON)
+    s1 = s1_vec/s1_norm
+    consistency = torch.einsum('ij,ij->i',s0,s1).numpy()
     results = pandas.DataFrame({'label':data['gold_label'],
                                 'score':consistency})
     third = 1.0/3.0

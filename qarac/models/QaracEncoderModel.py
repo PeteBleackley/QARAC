@@ -9,7 +9,7 @@ Created on Tue Sep  5 10:01:39 2023
 import transformers
 import qarac.models.layers.GlobalAttentionPoolingHead
 
-class QaracEncoderModel(transformers.TFPreTrainedModel):
+class QaracEncoderModel(transformers.PreTrainedModel):
     
     def __init__(self,base_model):
         """
@@ -27,27 +27,11 @@ class QaracEncoderModel(transformers.TFPreTrainedModel):
         """
         super(QaracEncoderModel,self).__init__(base_model.config)
         self.base_model = base_model
-        self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead()
+        self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead(base_model.config)
         
-    def build(self,input_shape):
-        """
         
-
-        Parameters
-        ----------
-        input_shape : tuple
-            shape of input data.
-
-        Returns
-        -------
-        None.
-
-        """
-        self.built=True
-        
-    def call(self,input_ids,
-             attention_mask=None,
-             training=False):
+    def forward(self,input_ids,
+             attention_mask=None):
         """
         Vectorizes a tokenised text
 
@@ -64,10 +48,8 @@ class QaracEncoderModel(transformers.TFPreTrainedModel):
         """
 
         return self.head(self.base_model(input_ids,
-                                         attention_mask,
-                                         training=training).last_hidden_state,
-                         attention_mask,
-                         training)
+                                         attention_mask).last_hidden_state,
+                         attention_mask)
   
     
     

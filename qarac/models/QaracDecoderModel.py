@@ -6,11 +6,10 @@ Created on Tue Sep  5 10:29:03 2023
 @author: peter
 """
 
-import keras
-import tensorflow
+import torch
 import transformers
 
-class QaracDecoderHead(keras.layers.Layer):
+class QaracDecoderHead(torch.nn.Module):
     
     def __init__(self,config,input_embeddings):
         """
@@ -27,32 +26,16 @@ class QaracDecoderHead(keras.layers.Layer):
 
         """
         super(QaracDecoderHead,self).__init__()
-        self.concat = keras.layers.Concatenate(axis=1)
-        self.layer_0 = transformers.models.roberta.modeling_tf_roberta.TFRobertaLayer(config)
-        self.layer_1 = transformers.models.roberta.modeling_tf_roberta.TFRobertaLayer(config)
-        self.head = transformers.models.roberta.modeling_tf_roberta.TFRobertaLMHead(config,
-                                                                                    input_embeddings)
-        
-    def build(self,input_shape):
-        """
+        self.layer_0 = transformers.models.roberta.modeling_roberta.RobertaLayer(config)
+        self.layer_1 = transformers.models.roberta.modeling_roberta.RobertaLayer(config)
+        self.head = transformers.models.roberta.modeling_roberta.RobertaLMHead(config,
+                                                                               input_embeddings)
         
 
-        Parameters
-        ----------
-        input_shape : tuple
-            Input shape.
-
-        Returns
-        -------
-        None.
-
-        """
-        self.built = True
         
         
         
-        
-    def call(self,
+    def forward(self,
              vector,
              hidden_states,
              attention_mask=None,training=False):
@@ -66,12 +49,13 @@ class QaracDecoderHead(keras.layers.Layer):
 
         Returns
         -------
-        transformers.modeling_tf_outputs.TFCausalLMOutputWithCrossAttentions
+        transformers.modeling_outputs.CausalLMOutputWithCrossAttentions
             Predicted text
 
         """
-        vectors = self.concat([vector, hidden_states])
-        attentions = attention_mask if attention_mask is None else self.concat([tensorflow.ones((hidden_states.shape(0),
+        vectors = torch.cat([vector, hidden_states],
+                            dim=1)
+        attentions = attention_mask if attention_mask is None else torch.cat([torch.ones((hidden_states.shape(0),
                                                                                                  1)),
                                                                                 attention_mask])
         l0 = self.layer_0(vectors,
@@ -91,7 +75,7 @@ class QaracDecoderHead(keras.layers.Layer):
                                       False,
                                       training)[0])
 
-class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_tf_utils.TFGenerationMixin):
+class QaracDecoderModel(transformers.PreTrainedModel,transformers.generation_utils.TFGenerationMixin):
     
     def __init__(self,base_model,tokenizer):
         """
@@ -112,11 +96,9 @@ class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_t
         self.decoder_head = QaracDecoderHead(self.base_model.config,
                                              self.base_model.roberta.get_input_embeddings())
         self.tokenizer = tokenizer
-        self.start=None
-        self.end=None
-        self.pad=None
+
         
-    def call(self,inputs,**kwargs):
+    def forward(self,inputs,**kwargs):
         """
         Predicts text from inputs
 
@@ -130,13 +112,13 @@ class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_t
 
         Returns
         -------
-        transformers.modeling_tf_outputs.TFCausalLMOutputWithCrossAttentions
+        transformers.modeling_outputs.CausalLMOutputWithCrossAttentions
             Predicted text
 
         """
         (v,s) = (kwargs['vector'],inputs) if 'vector' in kwargs else inputs
         
-        return self.decoder_head(tensorflow.expand_dims(v,1),
+        return self.decoder_head(torch.unsqueeze(v,1),
                                   self.base_model(s).last_hidden_state,
                                  training = kwargs.get('training',False))
     
@@ -145,7 +127,7 @@ class QaracDecoderModel(transformers.TFPreTrainedModel,transformers.generation_t
                                       attention_mask=None,
                                       **kwargs):
         if attention_mask is None:
-            attention_mask = tensorflow.ones_like(input_ids)
+            attention_mask = torch.ones_like(input_ids)
         return {'input_ids':input_ids,
                 'attention_mask':attention_mask}
     

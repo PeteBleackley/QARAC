@@ -6,90 +6,59 @@ Created on Tue Sep  5 07:32:55 2023
 @author: peter
 """
 
-import keras
-import tensorflow
+import torch
 
+EPSILON = 1.0e-12   
 
-@tensorflow.function
-def dot_prod(vectors):
-    (x,y) = vectors
-    return tensorflow.tensordot(x,y,axes=1)
+class GlobalAttentionPoolingHead(torch.nn.Module):
     
-
-class GlobalAttentionPoolingHead(keras.layers.Layer):
-    
-    def __init__(self):
+    def __init__(self,config):
         """
         Creates the layer
+        Parameters
+        ----------
+        config : transformers.RobertaConfig
+                 the configuration of the model
 
         Returns
         -------
         None.
 
         """
+        size = config.hidden_size
         super(GlobalAttentionPoolingHead,self).__init__()
-        self.global_projection = None
-        self.local_projection = None
+        self.global_projection = torch.nn.Linear(size,size,bias=False)
+        self.local_projection = torch.nn.Linear(size,size,bias=False)
         
-        
-    def build(self,input_shape):
-        """
-        Initialises layer weights
-
-        Parameters
-        ----------
-        input_shape : tuple
-            Shape of the input layer
-
-        Returns
-        -------
-        None.
-
-        """
-        width = input_shape[-1]
-        self.global_projection = self.add_weight('global projection',
-                                                 shape=(width,width),
-                                                 trainable=True)
-        self.local_projection = self.add_weight('local projection',
-                                                shape=(width,width),
-                                                trainable=True)
-        self.built=True
     
-    @tensorflow.function
-    def project_local(self,X):
-        return tensorflow.tensordot(X,
-                                    self.local_projection,
-                                    axes=1)
         
-    def call(self,X,attention_mask=None,training=None):
+    def forward(self,X,attention_mask=None):
         """
         
 
         Parameters
         ----------
-        X : tensorflow.Tensor
+        X : torch.Tensor
             Base model vectors to apply pooling to.
         attention_mask: tensorflow.Tensor, optional
             mask for pad values
-        training : bool, optional
-            Not used. The default is None.
+        
 
         Returns
         -------
-        tensorflow.Tensor
+        torch.Tensor
             The pooled value.
 
         """
-        gp = tensorflow.linalg.l2_normalize(tensorflow.tensordot(tensorflow.reduce_sum(X,
-                                                                                       axis=1),
-                                                                  self.global_projection,
-                                                                 axes=1),
-                                            axis=1)
-        lp = tensorflow.linalg.l2_normalize(tensorflow.vectorized_map(self.project_local,
-                                                                      X),
-                                            axis=2)
-        attention = tensorflow.vectorized_map(dot_prod,(lp,gp))
         if attention_mask is None:
-            attention_mask = tensorflow.ones_like(attention)
-        return tensorflow.vectorized_map(dot_prod,
-                                         (attention * attention_mask,X))
+            attention_mask = torch.ones_like(X)
+        Xa = X*attention_mask
+        sigma = torch.sum(Xa,dim=1)
+        psigma = self.global_projection(sigma)
+        nsigma = torch.max(torch.linalg.vector_norm(psigma,dim=1),EPSILON)
+        gp = psigma/nsigma
+        loc = self.local_projection(Xa)
+        nloc = torch.max(torch.linalg.vector_norm(loc,dim=2),EPSILON)
+        lp = loc/nloc
+        attention = torch.einsum('ijk,k->ij',lp,gp)
+        return torch.einsum('ij,ijk->ik',attention,Xa)

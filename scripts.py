@@ -128,7 +128,7 @@ def train_models(path):
                                                                tokenizer)
     loss_fn = CombinedLoss()
     optimizer = torch.optim.NAdam(trainer.parameters(),lr=5.0e-5)
-    scheduler = torch.optim.ExponentialDecay(optimizer,gamma=0.9)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,gamma=0.9)
     training_data = qarac.corpora.CombinedCorpus.CombinedCorpus(tokenizer,
                                                                 all_text='corpora/all_text.csv',
                                                                 question_answering='corpora/question_answering.csv',

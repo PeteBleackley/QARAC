@@ -8,7 +8,6 @@ Created on Tue Sep  5 10:29:03 2023
 
 import transformers
 import torch
-import qarac.models.QaracBaseModel
 
 class QaracDecoderHead(torch.nn.Module):
     
@@ -76,7 +75,7 @@ class QaracDecoderHead(torch.nn.Module):
                                       False,
                                       training)[0])
 
-class QaracDecoderModel(qarac.models.QaracBaseModel.QaracBaseModel,
+class QaracDecoderModel(transformers.PreTrainedModel,
                         transformers.generation_utils.GenerationMixin):
     
     def __init__(self,config,tokenizer):

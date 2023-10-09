@@ -6,10 +6,10 @@ Created on Tue Sep  5 10:01:39 2023
 @author: peter
 """
 
-import qarac.models.QaracBaseModel
+import transformers
 import qarac.models.layers.GlobalAttentionPoolingHead
 
-class QaracEncoderModel(qarac.models.QaracBaseModel.QaracBaseModel):
+class QaracEncoderModel(transformers.PreTrainedModel):
     
     def __init__(self,base_model):
         """
@@ -25,8 +25,9 @@ class QaracEncoderModel(qarac.models.QaracBaseModel.QaracBaseModel):
         None.
 
         """
-        super(QaracEncoderModel,self).from_pretrained(base_model)
-        self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead(self.base_model.config)
+        config = transformers.PretrainedConfig.from_pretrained(base_model)
+        super(QaracEncoderModel,self).__init__(base_model,config=config)
+        self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead(config)
         
         
     def forward(self,input_ids,

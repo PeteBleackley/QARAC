@@ -12,7 +12,7 @@ import qarac.models.QaracDecoderModel
 
 EPSILON=1.0e-12
 
-class QaracTrainerModel(torch.nn.Module()):
+class QaracTrainerModel(torch.nn.Module):
     
     def __init__(self,base_encoder_model,base_decoder_model,tokenizer):
         """

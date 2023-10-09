@@ -47,7 +47,8 @@ class QaracEncoderModel(transformers.PreTrainedModel):
             Vector representing the document
 
         """
-
+        if attention_mask is None and 'attention_mask' in input_ids:
+            (input_ids,attention_mask) = (input_ids['input_ids'],input_ids['attention_mask'])
         return self.head(self.encoder(input_ids,
                                       attention_mask).last_hidden_state,
                          attention_mask)

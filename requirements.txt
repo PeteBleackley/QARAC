@@ -1,6 +1,4 @@
-keras
-keras_nlp
-tensorflow
+torch
 numpy
 nltk
 tokenizers
@@ -11,3 +9,7 @@ spacy-experimental
 pandas
 allennlp
 allennlp-models
+scipy
+seaborn
+huggingface_hub
+

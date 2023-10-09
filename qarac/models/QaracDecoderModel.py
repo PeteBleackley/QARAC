@@ -96,7 +96,7 @@ class QaracDecoderModel(transformers.RobertaModel,
         self.decoder_base = transformers.RobertaModel.from_pretrained(model_path,
                                                                       config=config)
         self.decoder_head = QaracDecoderHead(self.config,
-                                             self.decoder_base.roberta.get_input_embeddings())
+                                             self.decoder_base.get_input_embeddings())
         self.tokenizer = tokenizer
 
         

@@ -123,7 +123,7 @@ def prepare_training_datasets():
     consistency.to_csv('corpora/consistency.csv')
     
 def train_models(path):
-    tokenizer = tokenizers.from_pretrained('roberta-base')
+    tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
     trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta_base', 
                                                                tokenizer)
     loss_fn = CombinedLoss()

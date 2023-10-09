@@ -8,7 +8,6 @@ Created on Tue Sep  5 07:32:55 2023
 
 import torch
 
-EPSILON = torch.tensor(1.0e-12)   
 
 class GlobalAttentionPoolingHead(torch.nn.Module):
     
@@ -29,6 +28,7 @@ class GlobalAttentionPoolingHead(torch.nn.Module):
         super(GlobalAttentionPoolingHead,self).__init__()
         self.global_projection = torch.nn.Linear(size,size,bias=False)
         self.local_projection = torch.nn.Linear(size,size,bias=False)
+        self.cosine = torch.nn.CosineSimilarity(dim=2,eps=1.0e-12)
         
     
         
@@ -55,16 +55,9 @@ class GlobalAttentionPoolingHead(torch.nn.Module):
         else:
             attention_mask = attention_mask.unsqueeze(2)
         Xa = X*attention_mask
-        sigma = torch.sum(Xa,dim=1)
-        psigma = self.global_projection(sigma)
-        nsigma = torch.maximum(torch.linalg.vector_norm(psigma,
-                                                        dim=1,
-                                                        keepdim=True),EPSILON)
-        gp = psigma/nsigma
-        loc = self.local_projection(Xa)
-        nloc = torch.maximum(torch.linalg.vector_norm(loc,
-                                                      dim=2,
-                                                      keepdim=True),EPSILON)
-        lp = loc/nloc
-        attention = torch.einsum('ijk,ik->ij',lp,gp)
+        sigma = torch.sum(Xa,dim=1,keepdim=True)
+        gp = self.global_projection(sigma)
+        lp = self.local_projection(Xa)
+        
+        attention = self.cosine(lp,gp)
         return torch.einsum('ij,ijk->ik',attention,Xa)

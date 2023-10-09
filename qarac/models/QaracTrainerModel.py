@@ -10,7 +10,7 @@ import torch
 import qarac.models.QaracEncoderModel
 import qarac.models.QaracDecoderModel
 
-EPSILON=torch.tensor(1.0e-12)
+
 
 class QaracTrainerModel(torch.nn.Module):
     
@@ -39,6 +39,7 @@ class QaracTrainerModel(torch.nn.Module):
         self.decoder = qarac.models.QaracDecoderModel.QaracDecoderModel(base_model_path,
                                                                         config,
                                                                         tokenizer)
+        self.cosine = torch.nn.CosineSimilarity(dim=2,eps=1.0e-12)
         
     def forward(self,
                 all_text,
@@ -92,15 +93,9 @@ class QaracTrainerModel(torch.nn.Module):
         reasoning = self.decoder((self.answer_encoder(proposition0)
                                              +self.answer_encoder(proposition1),
                                              conclusion_offset))
-        s0vec = self.answer_encoder(statement0)
-        s0norm = torch.maximum(torch.linalg.vector_norm(s0vec,
-                                                        dim=1,
-                                                        keepdim=True),EPSILON)
-        s0 = s0vec/s0norm
-        s1vec = self.answer_encoder(statement1)
-        s1norm = torch.maximum(torch.linalg.vector_norm(s1vec,
-                                                        dim=1,
-                                                        keepdim=True),EPSILON)
-        s1 = s1vec/s1norm
-        consistency = torch.einsum('ij,ij->i',s0,s1)
+        s0 = self.answer_encoder(statement0)
+        
+        s1 = self.answer_encoder(statement1)
+        
+        consistency = self.cosine(s0,s1)
         return (encode_decode,question_answering,reasoning,consistency)

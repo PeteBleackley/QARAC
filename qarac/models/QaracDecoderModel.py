@@ -119,7 +119,8 @@ class QaracDecoderModel(transformers.RobertaModel,
         (v,s) = (kwargs['vector'],inputs) if 'vector' in kwargs else inputs
         
         return self.decoder_head(torch.unsqueeze(v,1),
-                                  self.decoder_base(s).last_hidden_state,
+                                  self.decoder_base(s,
+                                                    use_cache='vector' in kwargs).last_hidden_state,
                                  training = kwargs.get('training',False))
     
     def prepare_inputs_for_generation(self, 

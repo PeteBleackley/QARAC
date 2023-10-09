@@ -8,6 +8,7 @@ Created on Wed Sep 20 14:12:34 2023
 
 import collections
 import torch
+import transformers
 from qarac.corpora import CorpusLoader, CorpusRepeater
 
 class CombinedCorpus(torch.utils.data.IterableDataset):
@@ -149,7 +150,8 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
                                                                        False)
            for (key,value) in Y.items()}
         Y['question_answering'] = torch.zeros((n,768))
-        return (X,tuple([Y[key] 
+        return (transformers.batch_encoding(X),
+                tuple([Y[key] 
                          for key in ('encode_decode',
                                      'question_answering',
                                      'reasoning',

@@ -75,7 +75,7 @@ class QaracDecoderHead(torch.nn.Module):
                                       False,
                                       training)[0])
 
-class QaracDecoderModel(transformers.PreTrainedModel,transformers.generation_utils.TFGenerationMixin):
+class QaracDecoderModel(transformers.PreTrainedModel,transformers.generation_utils.GenerationMixin):
     
     def __init__(self,base_model,tokenizer):
         """

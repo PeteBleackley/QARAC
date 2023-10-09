@@ -52,6 +52,8 @@ class GlobalAttentionPoolingHead(torch.nn.Module):
         """
         if attention_mask is None:
             attention_mask = torch.ones_like(X)
+        else:
+            attention_mask = attention_mask.unsqueeze(2)
         Xa = X*attention_mask
         sigma = torch.sum(Xa,dim=1)
         psigma = self.global_projection(sigma)

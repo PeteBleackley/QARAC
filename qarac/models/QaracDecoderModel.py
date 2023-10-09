@@ -8,7 +8,7 @@ Created on Tue Sep  5 10:29:03 2023
 
 import transformers
 import torch
-import qarac.models.QaracBaseModel.QaracBaseModel
+import qarac.models.QaracBaseModel
 
 class QaracDecoderHead(torch.nn.Module):
     

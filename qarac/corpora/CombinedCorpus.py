@@ -150,7 +150,7 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
                                                                        False)
            for (key,value) in Y.items()}
         Y['question_answering'] = torch.zeros((n,768))
-        return (transformers.BatchEncoding(X),
+        return (X,
                 tuple([Y[key] 
                          for key in ('encode_decode',
                                      'question_answering',
@@ -180,8 +180,8 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
         if inputs:
             attention_mask = torch.not_equal(input_ids,
                                              self.pad_token)
-            result = {'input_ids':input_ids,
-                      'attention_mask':attention_mask}
+            result = transformers.BatchEncoding({'input_ids':input_ids,
+                                                 'attention_mask':attention_mask})
         return result
     
     

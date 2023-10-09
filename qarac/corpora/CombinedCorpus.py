@@ -150,7 +150,7 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
                                                                        False)
            for (key,value) in Y.items()}
         Y['question_answering'] = torch.zeros((n,768))
-        return (transformers.batch_encoding(X),
+        return (transformers.BatchEncoding(X),
                 tuple([Y[key] 
                          for key in ('encode_decode',
                                      'question_answering',

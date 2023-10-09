@@ -124,7 +124,7 @@ def prepare_training_datasets():
     
 def train_models(path):
     tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
-    trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta_base', 
+    trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta-base', 
                                                                tokenizer)
     loss_fn = CombinedLoss()
     optimizer = torch.optim.NAdam(trainer.parameters(),lr=5.0e-5)

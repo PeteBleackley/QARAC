@@ -8,7 +8,7 @@ Created on Mon Oct  9 09:52:39 2023
 
 import transformers
 
-class QaracBaseModel(transformers.PreTraineModel):
+class QaracBaseModel(transformers.PreTrainedModel):
     """Base class for Qarac Models. Provided config_class"""
     config_class = transformers.RobertaConfig
     

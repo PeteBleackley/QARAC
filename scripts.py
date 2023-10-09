@@ -22,14 +22,23 @@ import scipy.spatial
 import seaborn
 import tqdm
 
-EPSILON = torch.tensor(1.0e-12)
+class SequenceCrossEntropyLoss(torch.nn.Module):
+    def __init__(self):
+        super(SequenceCrossEntropyLoss,self).__init__()
+        self.crossentropy = torch.nn.CrossEntropyLoss()
+        
+    def forward(self,y_pred,y_true):
+        (batch_size,sequence_length,n_classes) = y_pred.shape
+        predictions = y_pred.view(-1,n_classes)
+        labels = y_true.view(-1)
+        return self.crossentropy(predictions,labels)
 
 class CombinedLoss(torch.nn.Module):
     def __init__(self):
         super(CombinedLoss,self).__init__()
-        self.component_losses = (torch.nn.CrossEntropyLoss(),
+        self.component_losses = (SequenceCrossEntropyLoss(),
                                  torch.nn.MSELoss(),
-                                 torch.nn.CrossEntropyLoss(),
+                                 SequenceCrossEntropyLoss(),
                                  torch.nn.MSELoss())
         
     def forward(self,y_pred,y_true):

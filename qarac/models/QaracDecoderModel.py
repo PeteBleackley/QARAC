@@ -11,7 +11,7 @@ import torch
 
 class QaracDecoderHead(torch.nn.Module):
     
-    def __init__(self,base_model,config,input_embeddings):
+    def __init__(self,config,input_embeddings):
         """
         Creates the Decoder head
 
@@ -25,7 +25,7 @@ class QaracDecoderHead(torch.nn.Module):
         None.
 
         """
-        super(QaracDecoderHead,self).from_pretrained(base_model,config)
+        super(QaracDecoderHead,self).__init__()
         self.layer_0 = transformers.models.roberta.modeling_roberta.RobertaLayer(config)
         self.layer_1 = transformers.models.roberta.modeling_roberta.RobertaLayer(config)
         self.head = transformers.models.roberta.modeling_roberta.RobertaLMHead(config,

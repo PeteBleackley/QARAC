@@ -27,7 +27,7 @@ class QaracEncoderModel(transformers.PreTrainedModel):
         """
         config = transformers.PretrainedConfig.from_pretrained(path)
         super(QaracEncoderModel,self).__init__(config)
-        self.encoder = transformers.RobertaModel(path)
+        self.encoder = transformers.RobertaModel.from_pretrained(path)
         self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead(config)
         
         

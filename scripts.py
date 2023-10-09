@@ -33,10 +33,10 @@ class CombinedLoss(torch.nn.Module):
                                  torch.nn.MSELoss())
         
     def forward(self,y_pred,y_true):
-        return torch.sum((fn(pred,obs)
-                          for (fn,pred,obs) in zip(self.component_losses,
-                                                   y_pred,
-                                                   y_true)))
+        return sum((fn(pred,obs)
+                    for (fn,pred,obs) in zip(self.component_losses,
+                                             y_pred,
+                                             y_true)))
 
 
 def capitalise(token,i):

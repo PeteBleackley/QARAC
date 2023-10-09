@@ -6,10 +6,10 @@ Created on Tue Sep  5 10:01:39 2023
 @author: peter
 """
 
-import transformers
+import qarac.models.QaracBaseModel
 import qarac.models.layers.GlobalAttentionPoolingHead
 
-class QaracEncoderModel(transformers.PreTrainedModel):
+class QaracEncoderModel(qarac.models.QaracBaseModel.QaracBaseModel):
     
     def __init__(self,base_model):
         """

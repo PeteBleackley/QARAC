@@ -158,7 +158,6 @@ def train_models(path):
                                  X['conclusion_offset'],
                                  X['statement0'],
                                  X['statement1'])
-            print([y.shape for y in prediction])
             loss = loss_fn(prediction,Y)
             loss.backward()
             optimizer.step()

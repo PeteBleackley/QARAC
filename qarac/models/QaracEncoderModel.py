@@ -52,9 +52,6 @@ class QaracEncoderModel(transformers.PreTrainedModel):
                                       attention_mask).last_hidden_state,
                          attention_mask)
     
-    @property
-    def config(self):
-        return self.base_model.config
   
     
     

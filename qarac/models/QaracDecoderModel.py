@@ -94,7 +94,6 @@ class QaracDecoderModel(qarac.models.QaracBaseModel.QaracBaseModel,
 
         """
         super(QaracDecoderModel,self).__init__(config)
-        self.base_model = base_model
         self.decoder_head = QaracDecoderHead(self.base_model.config,
                                              self.base_model.roberta.get_input_embeddings())
         self.tokenizer = tokenizer

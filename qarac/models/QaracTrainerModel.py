@@ -39,7 +39,7 @@ class QaracTrainerModel(torch.nn.Module):
         self.decoder = qarac.models.QaracDecoderModel.QaracDecoderModel(base_model_path,
                                                                         config,
                                                                         tokenizer)
-        self.cosine = torch.nn.CosineSimilarity(dim=2,eps=1.0e-12)
+        self.cosine = torch.nn.CosineSimilarity(dim=1,eps=1.0e-12)
         
     def forward(self,
                 all_text,

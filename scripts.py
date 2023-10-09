@@ -411,10 +411,14 @@ def test_consistency(path):
     s1_attn = torch.not_equal(s1_in,
                               pad_token)
     s0_vec = encoder(s0_in,attention_mask=s0_attn)
-    s0_norm = torch.maximum(torch.linalg.vector_norm(s0_vec,dim=1),EPSILON)
+    s0_norm = torch.maximum(torch.linalg.vector_norm(s0_vec,
+                                                     dim=1,
+                                                     keepdim=True),EPSILON)
     s0 = s0_vec/s0_norm
     s1_vec = encoder(s1_in,attention_mask=s1_attn)
-    s1_norm = torch.maximum(torch.linalg.vector_norm(s1_vec,dim=1),EPSILON)
+    s1_norm = torch.maximum(torch.linalg.vector_norm(s1_vec,
+                                                     dim=1,
+                                                     keepdim=True),EPSILON)
     s1 = s1_vec/s1_norm
     consistency = torch.einsum('ij,ij->i',s0,s1).numpy()
     results = pandas.DataFrame({'label':data['gold_label'],

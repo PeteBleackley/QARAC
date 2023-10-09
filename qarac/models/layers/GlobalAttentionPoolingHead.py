@@ -66,5 +66,5 @@ class GlobalAttentionPoolingHead(torch.nn.Module):
                                                       dim=2,
                                                       keepdim=True),EPSILON)
         lp = loc/nloc
-        attention = torch.einsum('ijk,k->ij',lp,gp)
+        attention = torch.einsum('ijk,ik->ij',lp,gp)
         return torch.einsum('ij,ijk->ik',attention,Xa)

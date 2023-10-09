@@ -22,7 +22,7 @@ import scipy.spatial
 import seaborn
 import tqdm
 
-EPSILON = 1.0e-12
+EPSILON = torch.tensor(1.0e-12)
 
 class CombinedLoss(torch.nn.Module):
     def __init__(self):

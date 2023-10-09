@@ -10,7 +10,7 @@ import torch
 import qarac.models.QaracEncoderModel
 import qarac.models.QaracDecoderModel
 
-EPSILON=1.0e-12
+EPSILON=torch.tensor(1.0e-12)
 
 class QaracTrainerModel(torch.nn.Module):
     

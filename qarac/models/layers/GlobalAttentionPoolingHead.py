@@ -8,7 +8,7 @@ Created on Tue Sep  5 07:32:55 2023
 
 import torch
 
-EPSILON = 1.0e-12   
+EPSILON = torch.tensor(1.0e-12)   
 
 class GlobalAttentionPoolingHead(torch.nn.Module):
     

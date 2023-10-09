@@ -93,10 +93,10 @@ class QaracTrainerModel(torch.nn.Module):
                                              +self.answer_encoder(proposition1),
                                              conclusion_offset))
         s0vec = self.answer_encoder(statement0)
-        s0norm = torch.max(torch.linalg.vector_norm(s0vec,dim=1),EPSILON)
+        s0norm = torch.maximum(torch.linalg.vector_norm(s0vec,dim=1),EPSILON)
         s0 = s0vec/s0norm
         s1vec = self.answer_encoder(statement1)
-        s1norm = torch.max(torch.linalg.vector_norm(s1vec,dim=1),EPSILON)
+        s1norm = torch.maximum(torch.linalg.vector_norm(s1vec,dim=1),EPSILON)
         s1 = s1vec/s1norm
         consistency = torch.einsum('ij,ij->i',s0,s1)
         return (encode_decode,question_answering,reasoning,consistency)

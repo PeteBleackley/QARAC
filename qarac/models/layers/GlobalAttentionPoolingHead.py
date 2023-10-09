@@ -57,10 +57,10 @@ class GlobalAttentionPoolingHead(torch.nn.Module):
         Xa = X*attention_mask
         sigma = torch.sum(Xa,dim=1)
         psigma = self.global_projection(sigma)
-        nsigma = torch.max(torch.linalg.vector_norm(psigma,dim=1),EPSILON)
+        nsigma = torch.maximum(torch.linalg.vector_norm(psigma,dim=1),EPSILON)
         gp = psigma/nsigma
         loc = self.local_projection(Xa)
-        nloc = torch.max(torch.linalg.vector_norm(loc,dim=2),EPSILON)
+        nloc = torch.maximum(torch.linalg.vector_norm(loc,dim=2),EPSILON)
         lp = loc/nloc
         attention = torch.einsum('ijk,k->ij',lp,gp)
         return torch.einsum('ij,ijk->ik',attention,Xa)

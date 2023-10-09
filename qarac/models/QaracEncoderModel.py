@@ -9,7 +9,7 @@ Created on Tue Sep  5 10:01:39 2023
 import transformers
 import qarac.models.layers.GlobalAttentionPoolingHead
 
-class QaracEncoderModel(transformers.PreTrainedModel):
+class QaracEncoderModel(transformers.RobertaModel):
     
     def __init__(self,base_model):
         """
@@ -26,7 +26,7 @@ class QaracEncoderModel(transformers.PreTrainedModel):
 
         """
         config = transformers.PretrainedConfig.from_pretrained(base_model)
-        super(QaracEncoderModel,self).__init__(base_model,config=config)
+        super(QaracEncoderModel,self).from_pretrained(base_model,config=config)
         self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead(config)
         
         

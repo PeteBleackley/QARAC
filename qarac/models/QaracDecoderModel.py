@@ -75,10 +75,10 @@ class QaracDecoderHead(torch.nn.Module):
                                       False,
                                       training)[0])
 
-class QaracDecoderModel(transformers.PreTrainedModel,
+class QaracDecoderModel(transformers.RobertaModel,
                         transformers.generation_utils.GenerationMixin):
     
-    def __init__(self,config,tokenizer):
+    def __init__(self,model_path,config,tokenizer):
         """
         Creates decoder model from base model
 
@@ -92,7 +92,7 @@ class QaracDecoderModel(transformers.PreTrainedModel,
         None.
 
         """
-        super(QaracDecoderModel,self).__init__(config)
+        super(QaracDecoderModel,self).from_pretrained(model_path,config=config)
         self.decoder_head = QaracDecoderHead(self.base_model.config,
                                              self.base_model.roberta.get_input_embeddings())
         self.tokenizer = tokenizer

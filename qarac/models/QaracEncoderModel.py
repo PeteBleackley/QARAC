@@ -25,9 +25,8 @@ class QaracEncoderModel(transformers.PreTrainedModel):
         None.
 
         """
-        super(QaracEncoderModel,self).__init__(base_model.config)
-        self.base_model = base_model
-        self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead(base_model.config)
+        super(QaracEncoderModel,self).from_pretrained(base_model)
+        self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead(self.base_model.config)
         
         
     def forward(self,input_ids,
@@ -50,6 +49,10 @@ class QaracEncoderModel(transformers.PreTrainedModel):
         return self.head(self.base_model(input_ids,
                                          attention_mask).last_hidden_state,
                          attention_mask)
+    
+    @property
+    def config(self):
+        return self.base_model.config
   
     
     

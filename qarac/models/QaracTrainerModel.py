@@ -14,7 +14,7 @@ EPSILON=1.0e-12
 
 class QaracTrainerModel(torch.nn.Module):
     
-    def __init__(self,base_encoder_model,base_decoder_model,tokenizer):
+    def __init__(self,base_model_path,tokenizer):
         """
         Sets up the Trainer model
 
@@ -32,9 +32,13 @@ class QaracTrainerModel(torch.nn.Module):
 
         """
         super(QaracTrainerModel,self).__init__()
-        self.question_encoder = qarac.models.QaracEncoderModel.QaracEncoderModel(base_encoder_model)
-        self.answer_encoder = qarac.models.QaracEncoderModel.QaracEncoderModel(base_encoder_model)
-        self.decoder = qarac.models.QaracDecoderModel.QaracDecoderModel(base_decoder_model,tokenizer)
+        self.question_encoder = qarac.models.QaracEncoderModel.QaracEncoderModel(base_model_path)
+        self.answer_encoder = qarac.models.QaracEncoderModel.QaracEncoderModel(base_model_path)
+        config = self.answer_encoder.config
+        config.is_decoder = True
+        self.decoder = qarac.models.QaracDecoderModel.QaracDecoderModel(base_model_path,
+                                                                        config,
+                                                                        tokenizer)
         
     def forward(self,
                 all_text,

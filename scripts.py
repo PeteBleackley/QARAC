@@ -123,14 +123,8 @@ def prepare_training_datasets():
     consistency.to_csv('corpora/consistency.csv')
     
 def train_models(path):
-    encoder_base = transformers.TFRobertaModel.from_pretrained('roberta-base')
-    config = encoder_base.config
-    config.is_decoder = True
-    decoder_base = transformers.TFRobertaModel.from_pretrained('roberta-base',
-                                                               config=config)
-    tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
-    trainer = qarac.models.QaracTrainerModel.QaracTrainerModel(encoder_base, 
-                                                               decoder_base, 
+    tokenizer = tokenizers.from_pretrained('roberta-base')
+    trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta_base', 
                                                                tokenizer)
     loss_fn = CombinedLoss()
     optimizer = torch.optim.NAdam(trainer.parameters(),lr=5.0e-5)

@@ -10,7 +10,7 @@ import collections
 import torch
 from qarac.corpora import CorpusLoader, CorpusRepeater
 
-class CombinedCorpus(torch.utils.data.IterableDataset()):
+class CombinedCorpus(torch.utils.data.IterableDataset):
     
     def __init__(self,tokenizer,**kwargs):
         """

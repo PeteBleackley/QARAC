@@ -37,7 +37,7 @@ class QaracDecoderHead(torch.nn.Module):
     def forward(self,
              vector,
              hidden_states,
-             attention_mask=None,training=False):
+             attention_mask=None):
         """
         Predicts text fron vector and hidden states of base model
 
@@ -58,21 +58,9 @@ class QaracDecoderHead(torch.nn.Module):
                                                                                                  1)),
                                                                                 attention_mask])
         l0 = self.layer_0(vectors,
-                          attentions,
-                          None,
-                          None,
-                          None,
-                          None,
-                          False,
-                          training)
+                          attentions)
         return self.head(self.layer_1(l0[0][:,1:],
-                                      attention_mask,
-                                      None,
-                                      None,
-                                      None,
-                                      None,
-                                      False,
-                                      training)[0])
+                                      attention_mask)[0])
 
 class QaracDecoderModel(transformers.RobertaModel,
                         transformers.generation_utils.GenerationMixin):
@@ -100,7 +88,7 @@ class QaracDecoderModel(transformers.RobertaModel,
         
     def forward(self,inputs,**kwargs):
         """
-        Predicts text from inputs
+        Predicts text from inputsBleakley
 
         Parameters
         ----------

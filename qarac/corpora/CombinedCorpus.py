@@ -59,7 +59,6 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
                                                          n_samples)
         self.batches = None
         self.pad_token = tokenizer.token_to_id('<pad>')
-        self.on_epoch_end()
         self.max_lengths = {}
         for corpus in (self.all_text,
                        self.question_answering,
@@ -114,10 +113,7 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
                 yield(self.batch(batch))
                 batch = []
                 n=0
-        
-            
-    def on_epoch_end(self):
-        self.batches = self.make_batches()
+
         
             
     def batch(self,samples):

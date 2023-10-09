@@ -92,9 +92,11 @@ class QaracDecoderModel(transformers.RobertaModel,
         None.
 
         """
-        super(QaracDecoderModel,self).from_pretrained(model_path,config=config)
-        self.decoder_head = QaracDecoderHead(self.base_model.config,
-                                             self.base_model.roberta.get_input_embeddings())
+        super(QaracDecoderModel,self).__init__(config)
+        self.decoder_base = transformers.RobertaModel.from_pretrained(model_path,
+                                                                      config=config)
+        self.decoder_head = QaracDecoderHead(self.config,
+                                             self.decoder_base.roberta.get_input_embeddings())
         self.tokenizer = tokenizer
 
         
@@ -119,7 +121,7 @@ class QaracDecoderModel(transformers.RobertaModel,
         (v,s) = (kwargs['vector'],inputs) if 'vector' in kwargs else inputs
         
         return self.decoder_head(torch.unsqueeze(v,1),
-                                  self.base_model(s).last_hidden_state,
+                                  self.decoder_base(s).last_hidden_state,
                                  training = kwargs.get('training',False))
     
     def prepare_inputs_for_generation(self, 

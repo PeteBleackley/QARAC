@@ -9,9 +9,9 @@ Created on Tue Sep  5 10:01:39 2023
 import transformers
 import qarac.models.layers.GlobalAttentionPoolingHead
 
-class QaracEncoderModel(transformers.RobertaModel):
+class QaracEncoderModel(transformers.PreTrainedModel):
     
-    def __init__(self,base_model):
+    def __init__(self,path):
         """
         Creates the endocer model
 
@@ -25,8 +25,9 @@ class QaracEncoderModel(transformers.RobertaModel):
         None.
 
         """
-        config = transformers.PretrainedConfig.from_pretrained(base_model)
-        super(QaracEncoderModel,self).from_pretrained(base_model,config=config)
+        config = transformers.PretrainedConfig.from_pretrained(path)
+        super(QaracEncoderModel,self).__init__(config)
+        self.encoder = transformers.RobertaModel(path)
         self.head = qarac.models.layers.GlobalAttentionPoolingHead.GlobalAttentionPoolingHead(config)
         
         
@@ -47,8 +48,8 @@ class QaracEncoderModel(transformers.RobertaModel):
 
         """
 
-        return self.head(self.base_model(input_ids,
-                                         attention_mask).last_hidden_state,
+        return self.head(self.encoder(input_ids,
+                                      attention_mask).last_hidden_state,
                          attention_mask)
     
     @property

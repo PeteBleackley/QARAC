@@ -6,14 +6,11 @@ Created on Wed Sep 20 14:12:34 2023
 @author: peter
 """
 
-import itertools
 import collections
-import numpy
-import tensorflow
-import keras
+import torch
 from qarac.corpora import CorpusLoader, CorpusRepeater
 
-class CombinedCorpus(keras.utils.Sequence):
+class CombinedCorpus(torch.utils.data.IterableDataset()):
     
     def __init__(self,tokenizer,**kwargs):
         """
@@ -82,23 +79,7 @@ class CombinedCorpus(keras.utils.Sequence):
         """
         return self.n_batches
     
-    def __getitem__(self,n):
-        """
-        Retrieves a batch of data
-
-        Parameters
-        ----------
-        n : int
-            index of batch to retrieve
-
-        Returns
-        -------
-        tupe(dict,dict)
-            Batch of data
-
-        """
-
-        return self.batch(next(self.batches))
+    
     
     def samples(self):
         """
@@ -123,14 +104,14 @@ class CombinedCorpus(keras.utils.Sequence):
                 Y.update(y)
             yield (X,Y)
             
-    def make_batches(self):
+    def __iter__(self):
         batch = []
         n=0
         for sample in self.samples():
             batch.append(sample)
             n+=1
             if n==32:
-                yield(batch)
+                yield(self.batch(batch))
                 batch = []
                 n=0
         
@@ -149,9 +130,9 @@ class CombinedCorpus(keras.utils.Sequence):
 
         Returns
         -------
-        X : dict[str,tensorflow.Tensor]
+        X : dict[str,torch.Tensor]
             Batched input samples
-        Y : dict[str,tensorflow.Tensor]
+        Y : dict[str,torch.Tensor]
             Batched output samples
 
         """
@@ -167,12 +148,16 @@ class CombinedCorpus(keras.utils.Sequence):
         
         X={key:self.pad(value,self.max_lengths[key])
            for (key,value) in X.items()}
-        Y={key:tensorflow.constant(value) if key=='consistency' else self.pad(value,
-                                                                              self.max_lengths[key],
-                                                                              False)
+        Y={key:torch.tensor(value) if key=='consistency' else self.pad(value,
+                                                                       self.max_lengths[key],
+                                                                       False)
            for (key,value) in Y.items()}
-        Y['question_answering'] = tensorflow.zeros((n,768))
-        return (X,Y)
+        Y['question_answering'] = torch.zeros((n,768))
+        return (X,tuple([Y[key] 
+                         for key in ('encode_decode',
+                                     'question_answering',
+                                     'reasoning',
+                                     'consistency')]))
     
     def pad(self,batch,maxlen,inputs=True):
         """
@@ -191,12 +176,12 @@ class CombinedCorpus(keras.utils.Sequence):
         """
         for sample in batch:
             sample.pad(maxlen,pad_id=self.pad_token)
-        input_ids = tensorflow.constant([sample.ids
-                                         for sample in batch])
+        input_ids = torch.tensor([sample.ids
+                                  for sample in batch])
         result = input_ids
         if inputs:
-            attention_mask = tensorflow.constant(numpy.not_equal(input_ids.numpy(),
-                                                                self.pad_token).astype(int))
+            attention_mask = torch.not_equal(input_ids,
+                                             self.pad_token)
             result = {'input_ids':input_ids,
                       'attention_mask':attention_mask}
         return result

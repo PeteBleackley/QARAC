@@ -159,6 +159,7 @@ def train_models(path):
                                  X['statement0'],
                                  X['statement1'])
             loss = loss_fn(prediction,Y)
+            print(loss.dtype)
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()

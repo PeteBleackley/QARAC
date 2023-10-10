@@ -145,7 +145,7 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
         
         X={key:self.pad(value,self.max_lengths[key])
            for (key,value) in X.items()}
-        Y={key:torch.tensor(value) if key=='consistency' else self.pad(value,
+        Y={key:torch.tensor(value).float() if key=='consistency' else self.pad(value,
                                                                        self.max_lengths[key],
                                                                        False)
            for (key,value) in Y.items()}

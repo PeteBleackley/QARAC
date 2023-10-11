@@ -1,3 +1,11 @@
+---
+title: QARAC: Question Answering, Reasoning and Consistency
+colorFrom: red
+colorTo: blue
+sdk: gradio
+app_file: app.py
+pinned: false
+---
 # QARAC
 Question Answering, Reasoning and Consistency
 

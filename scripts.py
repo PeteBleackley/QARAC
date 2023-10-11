@@ -135,7 +135,9 @@ def train_models(path):
     tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
     trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta-base', 
                                                                tokenizer)
+    trainer.cuda()
     loss_fn = CombinedLoss()
+    loss_fn.cuda()
     optimizer = torch.optim.NAdam(trainer.parameters(),lr=5.0e-5)
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,gamma=0.9)
     training_data = qarac.corpora.CombinedCorpus.CombinedCorpus(tokenizer,

@@ -1,5 +1,5 @@
 ---
-title: QARAC: Question Answering, Reasoning and Consistency
+title: "QARAC: Question Answering, Reasoning and Consistency"
 colorFrom: red
 colorTo: blue
 sdk: gradio

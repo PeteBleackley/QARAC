@@ -1,4 +1,5 @@
-torch
+allennlp==2.10.1
+torch==1.11.0
 numpy
 nltk
 tokenizers
@@ -7,7 +8,6 @@ datasets
 spacy
 spacy-experimental
 pandas
-allennlp
 allennlp-models
 scipy
 seaborn

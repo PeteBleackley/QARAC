@@ -12,4 +12,5 @@ allennlp-models
 scipy
 seaborn
 huggingface_hub
+gradio
 

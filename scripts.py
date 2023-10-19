@@ -6,7 +6,6 @@ import tokenizers
 import transformers
 import huggingface_hub
 import qarac.corpora.BNCorpus
-import qarac.models.qarac_base_model
 import qarac.models.QaracTrainerModel
 import qarac.corpora.CombinedCorpus
 import torch

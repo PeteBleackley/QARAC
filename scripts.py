@@ -1,7 +1,6 @@
 
 import os
 import argparse
-import json
 import numpy
 import tokenizers
 import transformers
@@ -21,6 +20,7 @@ import scipy.stats
 import scipy.spatial
 import seaborn
 import tqdm
+import gradio
 
 class SequenceCrossEntropyLoss(torch.nn.Module):
     def __init__(self):
@@ -131,7 +131,7 @@ def prepare_training_datasets():
     reasoning.to_csv('corpora/reasoning_train.csv')
     consistency.to_csv('corpora/consistency.csv')
     
-def train_models(path):
+def train_models(path,progress=gradio.Progress(track_tqdm=True)):
     tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
     trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta-base', 
                                                                tokenizer)
@@ -146,10 +146,11 @@ def train_models(path):
                                                                 reasoning='corpora/reasoning_train.csv',
                                                                 consistency='corpora/consistency.csv')
     n_batches = len(training_data)
-    history = []
+    history = {}
     for epoch in range(10):
         print("Epoch",epoch)
-        epoch_history = []
+        epoch_label = 'Epoch {}'.format(epoch)
+        epoch_data = {}
         for (batch,(X,Y)) in enumerate(tqdm.tqdm(training_data)):
             prediction = trainer(X['all_text'],
                                  X['offset_text'],
@@ -165,16 +166,14 @@ def train_models(path):
             optimizer.step()
             optimizer.zero_grad()
             if batch % 1024 == 0 or batch == n_batches-1:
-                epoch_history.append({'batch':batch,
-                                      'loss':loss.item()})
+                epoch_data[batch] = loss.item()
+        history[epoch_label] = epoch_data
         scheduler.step()
-        history.append(epoch_history)
-    with open('training_history.json','w') as jsonfile:
-        json.dump(history,jsonfile)
     huggingface_hub.login(token=os.environ['HUGGINGFACE_TOKEN'])
     trainer.question_encoder.push_to_hub('{}/qarac-roberta-question-encoder'.format(path))
     trainer.answer_encoder.push_to_hub('{}/qarac-roberta-answer-encoder'.format(path))
     trainer.decoder.push_to_hub('{}/qarac-roberta-decoder'.format(path))
+    return history
     
     
 def test_encode_decode(path):

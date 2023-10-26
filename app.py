@@ -10,8 +10,10 @@ import gradio as gr
 import scripts
 import pandas
 
-def greet(name):
-    return "Hello " + name + "!!"
+def download(button):
+    scripts.download_training_data()
+    return gr.Button.update(interactive=True)
+
 
 def train():
     history = scripts.train_models('PlayfulTechnology')
@@ -19,8 +21,10 @@ def train():
 
 
 with gr.Blocks() as trainer:
-    training_button = gr.Button(value="Train models")
+    download_button = gr.Button(value='Doenload training_data')
+    training_button = gr.Button(value="Train models",interactive=False)
     loss_plot = gr.Plot()
+    download_button.click(download,inputs=download_button,outputs=training_button)
     training_button.click(train,inputs=[],outputs=[loss_plot])
     
 trainer.launch()

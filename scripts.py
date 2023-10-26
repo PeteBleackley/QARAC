@@ -19,6 +19,7 @@ import scipy.spatial
 import seaborn
 import tqdm
 import gradio
+import boto3
 
 class SequenceCrossEntropyLoss(torch.nn.Module):
     def __init__(self):
@@ -54,6 +55,16 @@ def clean_question(doc):
     if words[-1]!='?':
         words.append('?')
     return ''.join(words)
+
+def download_training_data():
+    if not os.path.exists('corpora'):
+        os.makedirs('corpora')
+    s3 = boto3.client('s3',
+                      aws_access_key_id=os.environ['AWS_KEY'],
+                      aws_secret_access_key=os.evviron['AWS_SECRET'])
+    for obj in s3.list_objects(Bucket='qarac')['Contents']:
+        filename = obj['Key']
+        s3.download_file('qarac',filename,'corpora/{}'.format(filename))
 
 def prepare_wiki_qa(filename,outfilename):
     data = pandas.read_csv(filename,sep='\t')

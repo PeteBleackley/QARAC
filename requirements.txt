@@ -13,4 +13,4 @@ scipy
 seaborn
 huggingface_hub
 gradio
-
+google-colab

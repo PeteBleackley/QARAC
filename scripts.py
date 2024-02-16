@@ -20,6 +20,7 @@ import seaborn
 import tqdm
 import gradio
 import boto3
+import google.colab
 
 class SequenceCrossEntropyLoss(torch.nn.Module):
     def __init__(self):
@@ -60,8 +61,8 @@ def download_training_data():
     if not os.path.exists('corpora'):
         os.makedirs('corpora')
     s3 = boto3.client('s3',
-                      aws_access_key_id=os.environ['AWS_KEY'],
-                      aws_secret_access_key=os.evviron['AWS_SECRET'])
+                      aws_access_key_id=google.colab.userdata.get('AWS_KEY'),
+                      aws_secret_access_key=google.colab.userdata.get('AWS_SECRET'))
     for obj in s3.list_objects(Bucket='qarac')['Contents']:
         filename = obj['Key']
         s3.download_file('qarac',filename,'corpora/{}'.format(filename))
@@ -132,7 +133,7 @@ def train_models(path,progress=gradio.Progress(track_tqdm=True)):
                                                                 consistency='corpora/consistency.csv')
     n_batches = len(training_data)
     history = {}
-    for epoch in range(10):
+    for epoch in range(25):
         print("Epoch",epoch)
         epoch_label = 'Epoch {}'.format(epoch)
         epoch_data = {}
@@ -154,7 +155,7 @@ def train_models(path,progress=gradio.Progress(track_tqdm=True)):
                 epoch_data[batch] = loss.item()
         history[epoch_label] = epoch_data
         scheduler.step()
-    huggingface_hub.login(token=os.environ['HUGGINGFACE_TOKEN'])
+    huggingface_hub.login(token=google.colab.userdata.get('HUGGINGFACE_TOKEN'))
     trainer.question_encoder.push_to_hub('{}/qarac-roberta-question-encoder'.format(path))
     trainer.answer_encoder.push_to_hub('{}/qarac-roberta-answer-encoder'.format(path))
     trainer.decoder.push_to_hub('{}/qarac-roberta-decoder'.format(path))

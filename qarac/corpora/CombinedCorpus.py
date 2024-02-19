@@ -37,7 +37,7 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
                                                                'encode_decode')})
         n_samples = len(self.all_text) 
 
-        self.n_batches = n_samples//32
+        self.n_batches = n_samples//16
         self.question_answering = CorpusRepeater.CorpusRepeater(CorpusLoader.CorpusLoader(kwargs['question_answering'], 
                                                                                           tokenizer, 
                                                                                           ['question',
@@ -110,7 +110,7 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
         for sample in self.samples():
             batch.append(sample)
             n+=1
-            if n==32:
+            if n==16:
                 yield(self.batch(batch))
                 batch = []
                 n=0

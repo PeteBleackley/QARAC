@@ -118,6 +118,7 @@ def prepare_training_datasets():
     consistency.to_csv('corpora/consistency.csv')
     
 def train_models(path,progress=gradio.Progress(track_tqdm=True)):
+    torch.cuda.empty_cache()
     tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
     trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta-base', 
                                                                tokenizer)

@@ -7,7 +7,7 @@ Created on Tue Sep  5 07:32:55 2023
 """
 
 import torch
-import FactorizedMatrixMultiplication
+import qarac.model.layer.FactorizedMatrixMultiplication
 
 
 class GlobalAttentionPoolingHead(torch.nn.Module):
@@ -27,8 +27,8 @@ class GlobalAttentionPoolingHead(torch.nn.Module):
         """
         size = config.hidden_size
         super(GlobalAttentionPoolingHead,self).__init__()
-        self.global_projection = FactorizedMatrixMultiplication.FactorizedMatrixMultiplication(size)
-        self.local_projection = FactorizedMatrixMultiplication.FactorizedMatrixMultiplication(size)
+        self.global_projection = qarac.model.layer.FactorizedMatrixMultiplication.FactorizedMatrixMultiplication(size)
+        self.local_projection = qarac.model.layer.FactorizedMatrixMultiplication.FactorizedMatrixMultiplication(size)
         self.cosine = torch.nn.CosineSimilarity(dim=2,eps=1.0e-12)
         
     

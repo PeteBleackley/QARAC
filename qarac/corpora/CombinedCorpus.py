@@ -58,6 +58,7 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
                                                                                    {},
                                                                                    'consistency'), 
                                                          n_samples)
+        self.device = kwargs['device']
         self.batches = None
         self.pad_token = tokenizer.token_to_id('<pad>')
         self.max_lengths = {}
@@ -145,11 +146,11 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
         
         X={key:self.pad(value,self.max_lengths[key])
            for (key,value) in X.items()}
-        Y={key:torch.tensor(value,device='cuda').float() if key=='consistency' else self.pad(value,
+        Y={key:torch.tensor(value,device=self.device).float() if key=='consistency' else self.pad(value,
                                                                        self.max_lengths[key],
                                                                        False)
            for (key,value) in Y.items()}
-        Y['question_answering'] = torch.zeros((n,768),device='cuda')
+        Y['question_answering'] = torch.zeros((n,768),device=self.device)
         return (X,
                 tuple([Y[key] 
                          for key in ('encode_decode',
@@ -176,7 +177,7 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
             sample.pad(maxlen,pad_id=self.pad_token)
         input_ids = torch.tensor([sample.ids
                                   for sample in batch],
-                                 device='cuda')
+                                 device=self.device)
         result = input_ids
         if inputs:
             attention_mask = torch.not_equal(input_ids,

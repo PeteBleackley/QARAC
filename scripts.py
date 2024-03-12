@@ -131,7 +131,8 @@ def train_models(path,progress=gradio.Progress(track_tqdm=True)):
                                                                 all_text='corpora/all_text.csv',
                                                                 question_answering='corpora/question_answering.csv',
                                                                 reasoning='corpora/reasoning_train.csv',
-                                                                consistency='corpora/consistency.csv')
+                                                                consistency='corpora/consistency.csv',
+                                                                device=trainer.device())
     n_batches = len(training_data)
     history = {}
     for epoch in range(25):

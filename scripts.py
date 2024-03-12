@@ -122,7 +122,8 @@ def train_models(path,progress=gradio.Progress(track_tqdm=True)):
     tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
     trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta-base', 
                                                                tokenizer)
-    trainer.cuda()
+    device = torch.device('cude:0')
+    trainer.to(device)
     loss_fn = CombinedLoss()
     loss_fn.cuda()
     optimizer = torch.optim.NAdam(trainer.parameters(),lr=5.0e-5)
@@ -132,7 +133,7 @@ def train_models(path,progress=gradio.Progress(track_tqdm=True)):
                                                                 question_answering='corpora/question_answering.csv',
                                                                 reasoning='corpora/reasoning_train.csv',
                                                                 consistency='corpora/consistency.csv',
-                                                                device=trainer.device())
+                                                                device=device)
     n_batches = len(training_data)
     history = {}
     for epoch in range(25):

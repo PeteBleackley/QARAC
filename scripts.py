@@ -125,7 +125,6 @@ def train_models(path,progress=gradio.Progress(track_tqdm=True)):
                                                                tokenizer)
     
     trainer.to(device)
-    trainer.devices()
     loss_fn = CombinedLoss()
     loss_fn.cuda()
     optimizer = torch.optim.NAdam(trainer.parameters(),lr=5.0e-5)

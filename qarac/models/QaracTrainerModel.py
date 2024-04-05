@@ -100,7 +100,3 @@ class QaracTrainerModel(torch.nn.Module):
         consistency = self.cosine(s0,s1)
         return (encode_decode,question_answering,reasoning,consistency)
     
-    def devices(self):
-        print("Question encoder",self.question_encoder.device)
-        print('Answer Encoder',self.answer_encoder.device)
-        print('Decoer',self.decoder.device)

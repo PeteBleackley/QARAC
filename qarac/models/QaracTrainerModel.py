@@ -102,5 +102,5 @@ class QaracTrainerModel(torch.nn.Module):
     
     def devices(self):
         print("Question encoder",self.question_encoder.device)
-        print('Answer Encoder',self.answer.encoder.device)
+        print('Answer Encoder',self.answer_encoder.device)
         print('Decoer',self.decoder.device)

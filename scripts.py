@@ -120,7 +120,7 @@ def prepare_training_datasets():
 def train_models(path,progress=gradio.Progress(track_tqdm=True)):
     device = torch.device('cuda:0')
     torch.cuda.empty_cache()
-    tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
+    tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base').to(device)
     trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta-base', 
                                                                tokenizer)
     

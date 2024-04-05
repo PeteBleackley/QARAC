@@ -181,7 +181,7 @@ class CombinedCorpus(torch.utils.data.IterableDataset):
         result = input_ids
         if inputs:
             attention_mask = torch.not_equal(input_ids,
-                                             self.pad_token)
+                                             self.pad_token).to(self.device)
             result = transformers.BatchEncoding({'input_ids':input_ids,
                                                  'attention_mask':attention_mask})
         return result

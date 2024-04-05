@@ -20,6 +20,4 @@ class FactorizedMatrixMultiplication(torch.nn.Module):
         self.matrix = torch.tensordot(self.left,self.right,1)
         
     def forward(self,X):
-        print(X.device)
-        print(self.matrix.device)
         return torch.einsum('ij,klj->kli',self.matrix,X)

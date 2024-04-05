@@ -122,7 +122,7 @@ def train_models(path,progress=gradio.Progress(track_tqdm=True)):
     tokenizer = tokenizers.Tokenizer.from_pretrained('roberta-base')
     trainer = qarac.models.QaracTrainerModel.QaracTrainerModel('roberta-base', 
                                                                tokenizer)
-    device = torch.device('cude:0')
+    device = torch.device('cuda:0')
     trainer.to(device)
     loss_fn = CombinedLoss()
     loss_fn.cuda()
